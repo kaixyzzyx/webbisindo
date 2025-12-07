@@ -250,16 +250,30 @@ async function startPractice() {
             throw new Error('Browser tidak mendukung akses kamera');
         }
         
-        // HTTPS check removed - getUserMedia will handle security
-        
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'user',
-                width: { ideal: 640 },
-                height: { ideal: 480 }
-            } 
-        });
+        // Try with ideal constraints first, fallback to basic if fails
+        let stream;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: 'user',
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                } 
+            });
+        } catch (e) {
+            // Fallback to basic constraints for mobile compatibility
+            console.log('Trying basic video constraints...');
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        }
         practiceVideo.srcObject = stream;
+        
+        // Wait for video to be ready
+        await new Promise((resolve) => {
+            practiceVideo.onloadedmetadata = () => {
+                practiceVideo.play();
+                resolve();
+            };
+        });
         
         isDetecting = true;
         startBtn.disabled = true;

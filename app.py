@@ -335,6 +335,7 @@ def practice_alphabet():
     return render_template('practice_alphabet.html', materials=[])
 
 @app.route('/practice/vocabulary')
+@login_required
 def practice_vocabulary():
     try:
         connection = get_db_connection()
