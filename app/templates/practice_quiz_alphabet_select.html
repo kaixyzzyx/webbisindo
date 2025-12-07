@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Pilih Soal Latihan Abjad - BISINDO{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="bg-warning bg-opacity-10 rounded-3 p-4 mb-4">
+    <div class="text-center">
+        <div class="mb-3">
+            <i class="fas fa-clipboard-list fa-3x text-warning"></i>
+        </div>
+        <h2 class="fw-bold mb-2">Latihan Soal Abjad BISINDO</h2>
+        <p class="text-muted mb-0">Pilih soal yang ingin Anda kerjakan dan uji kemampuan Anda!</p>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-tasks fa-2x text-warning mb-2"></i>
+                <h3 class="fw-bold mb-1">{{ questions|length }}</h3>
+                <p class="text-muted small mb-0">Total Soal</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h3 class="fw-bold mb-1">{{ completed|length }}</h3>
+                <p class="text-muted small mb-0">Sudah Dikerjakan</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-hourglass-half fa-2x text-secondary mb-2"></i>
+                <h3 class="fw-bold mb-1">{{ questions|length - completed|length }}</h3>
+                <p class="text-muted small mb-0">Belum Dikerjakan</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Questions List -->
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-warning bg-opacity-10 border-0 py-3">
+                <h5 class="mb-0 fw-bold"><i class="fas fa-list-ul me-2"></i>Daftar Soal Tersedia</h5>
+            </div>
+            <div class="card-body p-0">
+                {% if questions %}
+                    <div class="list-group list-group-flush">
+                        {% for question in questions %}
+                        <div class="list-group-item list-group-item-action p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-7">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="bg-warning bg-opacity-10 rounded-circle p-3">
+                                                <i class="fas fa-spell-check fa-lg text-warning"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-grow-1 ms-3">
+                                            <h6 class="mb-1 fw-bold">{{ question[2] }}</h6>
+                                            <p class="text-muted small mb-0">
+                                                <i class="fas fa-key me-1"></i>Jawaban: 
+                                                <span class="badge bg-warning bg-opacity-25 text-dark">{{ question[3] }}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-md-center mt-3 mt-md-0">
+                                    {% if question[0] in completed %}
+                                    <span class="badge bg-success px-3 py-2">
+                                        <i class="fas fa-check-circle me-1"></i>Sudah Dikerjakan
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-light text-warning border border-warning px-3 py-2">
+                                        <i class="fas fa-clock me-1"></i>Belum Dikerjakan
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-2 text-md-end mt-3 mt-md-0">
+                                    <form method="POST" action="{{ url_for('practice_quiz_alphabet_start') }}">
+                                        <input type="hidden" name="quiz_ids" value="{{ question[0] }}">
+                                        <button type="submit" class="btn btn-warning w-100">
+                                            <i class="fas fa-play me-1"></i>Mulai
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-5 text-center">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Belum Ada Soal Tersedia</h5>
+                        <p class="text-muted">Hubungi admin untuk menambahkan soal latihan.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Info Card -->
+<div class="row mt-4">
+    <div class="col-lg-10 mx-auto">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-1 text-center">
+                        <i class="fas fa-info-circle fa-2x text-info"></i>
+                    </div>
+                    <div class="col-md-11">
+                        <h6 class="fw-bold mb-2">Panduan Latihan</h6>
+                        <ul class="mb-0 small">
+                            <li>Klik tombol "Mulai" pada soal yang ingin dikerjakan</li>
+                            <li>Setiap soal memerlukan gerakan tangan per huruf menggunakan kamera</li>
+                            <li>Akurasi minimal 50% untuk setiap huruf</li>
+                            <li>Gunakan tombol navigasi untuk berpindah antar soal</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const checkboxes = document.querySelectorAll('.quiz-checkbox');
+const selectAllCheckbox = document.getElementById('select-all');
+const selectedCount = document.getElementById('selected-count');
+const startBtn = document.getElementById('start-btn');
+
+// Update count and button state
+function updateSelection() {
+    const checked = document.querySelectorAll('.quiz-checkbox:checked').length;
+    selectedCount.textContent = checked;
+    startBtn.disabled = checked === 0;
+    
+    // Update select all checkbox
+    selectAllCheckbox.checked = checked === checkboxes.length && checked > 0;
+    selectAllCheckbox.indeterminate = checked > 0 && checked < checkboxes.length;
+}
+
+// Toggle all checkboxes
+function toggleAll(checkbox) {
+    checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    updateSelection();
+}
+
+// Select all
+function selectAll() {
+    checkboxes.forEach(cb => cb.checked = true);
+    updateSelection();
+}
+
+// Deselect all
+function deselectAll() {
+    checkboxes.forEach(cb => cb.checked = false);
+    updateSelection();
+}
+
+// Add event listeners
+checkboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', updateSelection);
+});
+
+// Initialize
+updateSelection();
+</script>
+{% endblock %}

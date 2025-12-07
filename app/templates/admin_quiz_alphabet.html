@@ -1,0 +1,194 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Soal Abjad - Admin BISINDO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manajemen Soal Abjad</h2>
+        <button class="btn btn-primary" onclick="addQuiz()">
+            <i class="fas fa-plus me-1"></i> Tambah Soal
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Huruf</th>
+                            <th>Gambar</th>
+                            <th>Status</th>
+                            <th class="text-end">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="quiz-table">
+                        <tr>
+                            <td colspan="4" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+fetch('/api/admin/quiz?type=alphabet')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const tbody = document.getElementById('quiz-table');
+            tbody.innerHTML = '';
+            data.quiz.forEach(question => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="badge bg-primary">${question.question || question.correct_answer || 'N/A'}</span></td>
+                        <td>${question.image_path ? '<i class="fas fa-check text-success"></i>' : '<i class="fas fa-times text-danger"></i>'}</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editQuiz(${question.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteQuiz(${question.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            document.getElementById('quiz-table').innerHTML = '<tr><td colspan="4" class="text-center">No data available</td></tr>';
+        }
+    })
+    .catch(error => {
+        document.getElementById('quiz-table').innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading data</td></tr>';
+    });
+
+function editQuiz(id) {
+    fetch(`/api/admin/quiz/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const quiz = data.quiz;
+                showEditModal('Edit Soal Abjad', [
+                    {label: 'Huruf', name: 'question', value: quiz.question}
+                ], (formData) => {
+                    fetch(`/api/admin/quiz/${id}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            type: quiz.type,
+                            question: formData.question,
+                            answer: quiz.answer,
+                            difficulty: quiz.difficulty
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            location.reload();
+                        } else {
+                            alert('Error updating quiz');
+                        }
+                    });
+                });
+            }
+        });
+}
+
+function deleteQuiz(id) {
+    if (confirm('Yakin ingin menghapus soal ini?')) {
+        fetch(`/api/admin/quiz/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting quiz');
+            }
+        });
+    }
+}
+
+function showEditModal(title, fields, onSave) {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.4)';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: none; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+                <div class="modal-header" style="border: none; padding: 2rem 2rem 1rem;">
+                    <h5 class="modal-title fw-bold" style="color: #2c3e50;">${title}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="background: none; border: none; font-size: 1.5rem; opacity: 0.6;"></button>
+                </div>
+                <div class="modal-body" style="padding: 1rem 2rem;">
+                    <form id="editForm">
+                        ${fields.map(field => `
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold" style="color: #34495e; margin-bottom: 0.8rem;">${field.label}</label>
+                                <input type="text" class="form-control" name="${field.name}" value="${field.value || ''}" style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem; background: rgba(255,255,255,0.8); transition: all 0.3s ease;" onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52,152,219,0.1)'" onblur="this.style.borderColor='#e8f4fd'; this.style.boxShadow='none'">
+                            </div>
+                        `).join('')}
+                    </form>
+                </div>
+                <div class="modal-footer" style="border: none; padding: 1rem 2rem 2rem; justify-content: center; gap: 1rem;">
+                    <button type="button" class="btn" data-bs-dismiss="modal" style="background: rgba(108,117,125,0.1); color: #6c757d; border: none; border-radius: 25px; padding: 0.8rem 2rem; font-weight: 500; transition: all 0.3s ease;" onmouseover="this.style.background='rgba(108,117,125,0.2)'" onmouseout="this.style.background='rgba(108,117,125,0.1)'">Batal</button>
+                    <button type="button" class="btn" onclick="saveEdit()" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; border-radius: 25px; padding: 0.8rem 2rem; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(52,152,219,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(52,152,219,0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(52,152,219,0.3)'">Simpan</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    window.saveEdit = function() {
+        const form = document.getElementById('editForm');
+        const formData = new FormData(form);
+        const data = {};
+        for (let [key, value] of formData.entries()) {
+            data[key] = value;
+        }
+        onSave(data);
+        bsModal.hide();
+        modal.remove();
+    };
+    
+    modal.addEventListener('hidden.bs.modal', () => {
+        modal.remove();
+    });
+}
+
+function addQuiz() {
+    showEditModal('Tambah Soal Abjad', [
+        {label: 'Huruf', name: 'question', value: ''}
+    ], (formData) => {
+        fetch('/api/admin/quiz', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                type: 'alphabet',
+                question: formData.question,
+                answer: formData.question,
+                difficulty: 'mudah'
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error adding quiz');
+            }
+        });
+    });
+}
+</script>
+{% endblock %}

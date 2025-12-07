@@ -1,0 +1,521 @@
+{% extends "base.html" %}
+
+{% block title %}Latihan Soal Kosakata - BISINDO{% endblock %}
+
+{% block content %}
+<!-- Success Modal -->
+<div id="success-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; border-radius: 15px; padding: 30px; max-width: 400px; text-align: center; animation: popIn 0.3s ease-out;">
+        <i id="modal-icon" class="fas fa-check-circle" style="font-size: 60px; color: #28a745; margin-bottom: 15px;"></i>
+        <h4 id="modal-title" style="margin-bottom: 10px;">Berhasil!</h4>
+        <p style="font-size: 18px; margin-bottom: 5px;">Soal <strong id="modal-question-num">1</strong></p>
+        <p id="modal-result" style="font-size: 16px; margin-bottom: 20px;">Jawaban: <strong id="modal-answer">Halo</strong></p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="modal-prev" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i> Sebelumnya
+            </button>
+            <button id="modal-next" class="btn btn-primary">
+                Lanjut <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-clipboard-check"></i> Latihan Soal Kosakata BISINDO
+        </h2>
+        <p class="text-center text-muted mb-4">
+            Jawab soal dengan gerakan tangan (akurasi ≥50%, langsung input)
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-question-circle"></i> Soal <span id="current-question-num">1</span> / <span id="total-questions">0</span></h5>
+                    <div>
+                        <span class="badge bg-success" id="score-badge">Skor: 0</span>
+                        <span class="badge bg-info" id="timer-badge">Waktu: 0s</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="quiz-container">
+                    <div class="text-center mb-4">
+                        <h3 class="mb-3">Soal:</h3>
+                        <div class="alert alert-primary" style="font-size: 2rem; font-weight: bold;" id="question-text">
+                            <!-- Question will be displayed here -->
+                        </div>
+                        <p class="text-muted">Isyaratkan kata dengan gerakan tangan Anda</p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Kamera Real-time</h6>
+                            <div class="border rounded" style="height: 300px; background: #000; position: relative;">
+                                <video id="quiz-video" autoplay muted style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
+                                <div id="detection-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; display: none;">
+                                    <div id="detected-gesture"></div>
+                                    <div class="progress mt-2" style="height: 20px;">
+                                        <div id="hold-progress" class="progress-bar bg-success" style="width: 0%">0%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Jawaban Anda:</h6>
+                            <div class="border rounded p-3" style="min-height: 300px;">
+                                <div id="answer-display" style="font-size: 2rem; font-weight: bold; text-align: center; color: #007bff;">
+                                    <!-- User answer will be displayed here -->
+                                </div>
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Status:</span>
+                                        <span id="answer-status">Menunggu jawaban...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <button id="start-quiz" class="btn btn-success btn-lg">
+                            <i class="fas fa-play"></i> Mulai Latihan
+                        </button>
+                        <button id="stop-quiz" class="btn btn-danger btn-lg" disabled>
+                            <i class="fas fa-stop"></i> Berhenti
+                        </button>
+                        <button id="prev-question" class="btn btn-secondary btn-lg" style="display: none;">
+                            <i class="fas fa-arrow-left"></i> Soal Sebelumnya
+                        </button>
+                        <button id="next-question" class="btn btn-primary btn-lg" style="display: none;">
+                            <i class="fas fa-arrow-right"></i> Soal Berikutnya
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="result-container" style="display: none;">
+                    <div class="text-center">
+                        <a href="{{ url_for('practice_quiz_vocabulary') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-redo"></i> Pilih Soal Lagi
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Cara Menjawab</h6>
+            </div>
+            <div class="card-body">
+                <ol class="small">
+                    <li>Baca soal yang ditampilkan</li>
+                    <li>Isyaratkan kata sesuai soal</li>
+                    <li>Jika akurasi ≥50%, jawaban langsung terinput</li>
+                    <li>Sistem akan otomatis menilai jawaban</li>
+                    <li>Lanjutkan ke soal berikutnya</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const questions = {{ questions|tojson|safe }};
+let currentQuestionIndex = 0;
+let userAnswers = [];
+let score = 0;
+let isDetecting = false;
+let detectionStartTime = null;
+let detectionInterval = null;
+let currentAnswer = [];
+let targetWords = [];
+let currentWordIndex = 0;
+let startTime = null;
+
+const REQUIRED_HOLD_TIME = 2000; // 2 seconds
+const ACCURACY_THRESHOLD = 0.5; // 50%
+
+// DOM elements
+const quizVideo = document.getElementById('quiz-video');
+const questionText = document.getElementById('question-text');
+const answerDisplay = document.getElementById('answer-display');
+const startBtn = document.getElementById('start-quiz');
+const stopBtn = document.getElementById('stop-quiz');
+const nextBtn = document.getElementById('next-question');
+const prevBtn = document.getElementById('prev-question');
+const detectionOverlay = document.getElementById('detection-overlay');
+const detectedGestureDiv = document.getElementById('detected-gesture');
+const holdProgress = document.getElementById('hold-progress');
+const answerStatus = document.getElementById('answer-status');
+const currentQuestionNum = document.getElementById('current-question-num');
+const totalQuestions = document.getElementById('total-questions');
+const scoreBadge = document.getElementById('score-badge');
+const timerBadge = document.getElementById('timer-badge');
+
+// Initialize
+if (questions.length === 0) {
+    questionText.innerHTML = '<p class="text-danger">Belum ada soal. Hubungi admin untuk menambahkan soal.</p>';
+    startBtn.disabled = true;
+} else {
+    totalQuestions.textContent = questions.length;
+    loadQuestion();
+}
+
+// Event listeners
+startBtn.addEventListener('click', startQuiz);
+stopBtn.addEventListener('click', stopQuiz);
+nextBtn.addEventListener('click', nextQuestion);
+prevBtn.addEventListener('click', prevQuestion);
+
+
+
+function loadQuestion() {
+    if (currentQuestionIndex >= questions.length) {
+        showResults();
+        return;
+    }
+    
+    const question = questions[currentQuestionIndex];
+    targetWords = question[3].split(','); // Split answer by comma
+    questionText.textContent = question[2]; // Display question text
+    currentAnswer = [];
+    currentWordIndex = 0;
+    answerDisplay.textContent = '';
+    answerStatus.textContent = `Menunggu kata ${currentWordIndex + 1} dari ${targetWords.length}...`;
+    currentQuestionNum.textContent = currentQuestionIndex + 1;
+    nextBtn.style.display = 'none';
+}
+
+async function startQuiz() {
+    if (!startTime) startTime = Date.now();
+    
+    try {
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Browser tidak mendukung akses kamera');
+        }
+        
+        // HTTPS check removed - getUserMedia will handle security
+        
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        });
+        quizVideo.srcObject = stream;
+        
+        isDetecting = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        
+        startRealtimeDetection();
+        startTimer();
+        
+        showNotification('Latihan dimulai! Isyaratkan jawaban Anda', 'success');
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        let errorMessage = 'Tidak dapat mengakses kamera. ';
+        
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Izin kamera ditolak. Refresh halaman dan berikan izin kamera.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'Kamera tidak ditemukan pada perangkat ini.';
+        } else if (error.name === 'NotSupportedError') {
+            errorMessage += 'Browser tidak mendukung akses kamera.';
+        } else if (error.message) {
+            errorMessage += error.message;
+        }
+        
+        showNotification(errorMessage, 'danger');
+    }
+}
+
+function stopQuiz() {
+    isDetecting = false;
+    
+    // Stop camera stream
+    if (quizVideo.srcObject) {
+        const tracks = quizVideo.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        quizVideo.srcObject = null;
+    }
+    
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    
+    if (detectionInterval) clearInterval(detectionInterval);
+    resetDetection();
+}
+
+function startTimer() {
+    setInterval(() => {
+        if (startTime && isDetecting) {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            timerBadge.textContent = `Waktu: ${elapsed}s`;
+        }
+    }, 1000);
+}
+
+function startRealtimeDetection() {
+    detectionInterval = setInterval(async () => {
+        if (!isDetecting) return;
+        
+        try {
+            // Check if video is ready
+            if (!quizVideo.videoWidth || !quizVideo.videoHeight) {
+                return;
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(quizVideo, 0, 0, 320, 240);
+            const imageData = canvas.toDataURL('image/jpeg', 0.7);
+            
+            const response = await fetch('/detect_gesture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image: imageData, type: 'vocabulary'})
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.detections.length > 0) {
+                processDetection(result.detections);
+            } else {
+                resetDetection();
+            }
+        } catch (error) {
+            console.error('Detection error:', error);
+        }
+    }, 1000);
+}
+
+function processDetection(detections) {
+    const bestDetection = detections.reduce((best, current) => 
+        current.confidence > best.confidence ? current : best
+    );
+    
+    const detectedClass = bestDetection.class;
+    const confidence = bestDetection.confidence;
+    
+    const targetWord = targetWords[currentWordIndex];
+    
+    if (detectedClass === targetWord && confidence >= ACCURACY_THRESHOLD) {
+        detectionOverlay.style.display = 'block';
+        detectedGestureDiv.innerHTML = `
+            <strong>${detectedClass}</strong><br>
+            <small>Akurasi: ${(confidence * 100).toFixed(1)}%</small>
+        `;
+        
+        onWordCompleted(detectedClass);
+    } else {
+        resetDetection();
+    }
+}
+
+function resetDetection() {
+    detectionStartTime = null;
+    holdProgress.style.width = '0%';
+    holdProgress.textContent = '0%';
+    detectionOverlay.style.display = 'none';
+}
+
+function onWordCompleted(word) {
+    currentAnswer.push(word);
+    answerDisplay.textContent = currentAnswer.join(', ');
+    currentWordIndex++;
+    resetDetection();
+    
+    showNotification(`Kata "${word}" berhasil terdeteksi!`, 'success');
+    
+    if (currentWordIndex >= targetWords.length) {
+        checkAnswer();
+    } else {
+        answerStatus.textContent = `Menunggu kata ${currentWordIndex + 1} dari ${targetWords.length}...`;
+    }
+}
+
+function checkAnswer() {
+    const userAnswerStr = currentAnswer.join(',');
+    const correctAnswerStr = targetWords.join(',');
+    const isCorrect = userAnswerStr === correctAnswerStr;
+    
+    if (isCorrect) {
+        score++;
+    }
+    
+    scoreBadge.textContent = `Skor: ${score}`;
+    saveQuizResult(questions[currentQuestionIndex][0], userAnswerStr, isCorrect);
+    
+    // Stop detection immediately
+    isDetecting = false;
+    if (detectionInterval) clearInterval(detectionInterval);
+    resetDetection();
+    
+    nextBtn.style.display = 'inline-block';
+    prevBtn.style.display = 'inline-block';
+    stopBtn.disabled = true;
+    updateNavigationButtons();
+    showSuccessModal(isCorrect);
+}
+
+function showSuccessModal(isCorrect) {
+    const modal = document.getElementById('success-modal');
+    const modalIcon = document.getElementById('modal-icon');
+    const modalTitle = document.getElementById('modal-title');
+    const modalQuestionNum = document.getElementById('modal-question-num');
+    const modalResult = document.getElementById('modal-result');
+    const modalAnswer = document.getElementById('modal-answer');
+    const modalPrev = document.getElementById('modal-prev');
+    const modalNext = document.getElementById('modal-next');
+    
+    modalQuestionNum.textContent = currentQuestionIndex + 1;
+    const userAnswerDisplay = currentAnswer.join(', ');
+    const correctAnswerDisplay = targetWords.join(', ');
+    modalAnswer.textContent = userAnswerDisplay;
+    
+    if (isCorrect) {
+        modalIcon.className = 'fas fa-check-circle';
+        modalIcon.style.color = '#28a745';
+        modalTitle.textContent = 'Benar!';
+        modalResult.innerHTML = `Jawaban: <strong style="color: #28a745;">${userAnswerDisplay}</strong>`;
+    } else {
+        modalIcon.className = 'fas fa-times-circle';
+        modalIcon.style.color = '#dc3545';
+        modalTitle.textContent = 'Salah!';
+        modalResult.innerHTML = `Jawaban Anda: <strong style="color: #dc3545;">${userAnswerDisplay}</strong><br>Jawaban Benar: <strong style="color: #28a745;">${correctAnswerDisplay}</strong>`;
+    }
+    
+    modalPrev.disabled = currentQuestionIndex === 0;
+    modalNext.disabled = false;
+    
+    if (currentQuestionIndex === questions.length - 1) {
+        modalNext.innerHTML = 'Selesai <i class="fas fa-check"></i>';
+    } else {
+        modalNext.innerHTML = 'Lanjut <i class="fas fa-chevron-right"></i>';
+    }
+    
+    modal.style.display = 'flex';
+    
+    modalPrev.onclick = () => {
+        modal.style.display = 'none';
+        prevQuestion();
+    };
+    
+    modalNext.onclick = () => {
+        modal.style.display = 'none';
+        if (currentQuestionIndex === questions.length - 1) {
+            showResults();
+        } else {
+            nextQuestion();
+        }
+    };
+}
+
+function nextQuestion() {
+    if (currentQuestionIndex < questions.length - 1) {
+        currentQuestionIndex++;
+        loadQuestion();
+        nextBtn.style.display = 'none';
+        prevBtn.style.display = 'none';
+        stopBtn.disabled = false;
+        // Restart detection
+        isDetecting = true;
+        startRealtimeDetection();
+    } else {
+        showResults();
+    }
+}
+
+function prevQuestion() {
+    if (currentQuestionIndex > 0) {
+        currentQuestionIndex--;
+        loadQuestion();
+        nextBtn.style.display = 'none';
+        prevBtn.style.display = 'none';
+        stopBtn.disabled = false;
+        // Restart detection
+        isDetecting = true;
+        startRealtimeDetection();
+    }
+}
+
+function updateNavigationButtons() {
+    if (nextBtn.style.display === 'inline-block') {
+        prevBtn.disabled = currentQuestionIndex <= 0;
+        
+        if (currentQuestionIndex >= questions.length - 1) {
+            nextBtn.innerHTML = '<i class="fas fa-check"></i> Selesai';
+        } else {
+            nextBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Soal Berikutnya';
+        }
+    }
+}
+
+function showResults() {
+    document.getElementById('quiz-container').style.display = 'none';
+    document.getElementById('result-container').style.display = 'block';
+    stopQuiz();
+}
+
+function saveQuizResult(quizId, userAnswer, isCorrect) {
+    const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+    
+    fetch('/api/quiz/submit', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            quiz_id: quizId,
+            user_answer: userAnswer,
+            is_correct: isCorrect,
+            time_taken: timeTaken
+        })
+    });
+}
+
+// Simple notification function
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Cleanup
+window.addEventListener('beforeunload', () => stopQuiz());
+</script>
+{% endblock %}

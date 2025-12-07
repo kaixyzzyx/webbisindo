@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Manajemen Materi - Admin BISINDO{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="bg-dark text-white" style="width: 250px; min-height: 100vh;">
+        <div class="p-3">
+            <h5><i class="fas fa-user-shield"></i> Admin Panel</h5>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link text-white" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+            </a>
+            <a class="nav-link text-white active bg-primary" href="{{ url_for('admin_materials') }}">
+                <i class="fas fa-book me-2"></i> Manajemen Materi
+            </a>
+            <a class="nav-link text-white" href="{{ url_for('admin_quiz') }}">
+                <i class="fas fa-question-circle me-2"></i> Manajemen Soal
+            </a>
+            <hr class="text-muted">
+            <a class="nav-link text-white" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i> Logout
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-grow-1 p-4">
+        <h2 class="mb-4">
+            <i class="fas fa-book"></i> Manajemen Materi
+        </h2>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-list"></i> Daftar Materi</h5>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
+                    <i class="fas fa-plus"></i> Tambah Materi
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <button class="btn btn-info" onclick="loadMaterialsTable()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tipe</th>
+                                <th>Judul</th>
+                                <th>Gambar</th>
+                                <th>Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="materials-table">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Material Modal -->
+<div class="modal fade" id="addMaterialModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Materi Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMaterialForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tipe</label>
+                        <select class="form-select" id="material-type" required>
+                            <option value="">Pilih Tipe</option>
+                            <option value="alphabet">Abjad</option>
+                            <option value="vocabulary">Kosakata</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Judul</label>
+                        <input type="text" class="form-control" id="material-title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Konten</label>
+                        <textarea class="form-control" id="material-content" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gambar</label>
+                        <input type="file" class="form-control" id="material-image" accept="image/*">
+                        <small class="text-muted">Upload gambar gerakan (opsional)</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="addMaterial()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Material Modal -->
+<div class="modal fade" id="editMaterialModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Materi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editMaterialForm">
+                    <input type="hidden" id="edit-material-id">
+                    <div class="mb-3">
+                        <label class="form-label">Tipe</label>
+                        <select class="form-select" id="edit-material-type" required>
+                            <option value="alphabet">Abjad</option>
+                            <option value="vocabulary">Kosakata</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Judul</label>
+                        <input type="text" class="form-control" id="edit-material-title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Konten</label>
+                        <textarea class="form-control" id="edit-material-content" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gambar Saat Ini</label>
+                        <div id="current-image-preview"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Upload Gambar Baru</label>
+                        <input type="file" class="form-control" id="edit-material-image" accept="image/*">
+                        <small class="text-muted">Kosongkan jika tidak ingin mengubah gambar</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="updateMaterial()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load materials
+function loadMaterialsTable() {
+    fetch('/api/admin/materials')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('materials-table');
+                tbody.innerHTML = '';
+                data.materials.forEach(material => {
+                    const imagePreview = material.image_path ? 
+                        `<img src="${material.image_path}" style="width:50px;height:50px;object-fit:cover;" class="rounded">` : 
+                        '<span class="text-muted">-</span>';
+                    
+                    const row = `
+                        <tr>
+                            <td>${material.id}</td>
+                            <td><span class="badge bg-info">${material.type}</span></td>
+                            <td>${material.title}</td>
+                            <td>${imagePreview}</td>
+                            <td>${material.created_at.split(' ')[0]}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editMaterial(${material.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteMaterial(${material.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
+        });
+}
+
+// Add material
+async function addMaterial() {
+    const type = document.getElementById('material-type').value;
+    const title = document.getElementById('material-title').value;
+    const content = document.getElementById('material-content').value;
+    const imageFile = document.getElementById('material-image').files[0];
+    
+    if (!type || !title) {
+        alert('Tipe dan Judul harus diisi!');
+        return;
+    }
+    
+    let imagePath = '';
+    
+    // Upload image if exists
+    if (imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        const uploadResponse = await fetch('/upload_image', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const uploadData = await uploadResponse.json();
+        if (uploadData.success) {
+            imagePath = uploadData.image_path;
+        }
+    }
+    
+    fetch('/api/admin/materials', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type, title, content, image_path: imagePath})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Materi berhasil ditambahkan!');
+            bootstrap.Modal.getInstance(document.getElementById('addMaterialModal')).hide();
+            document.getElementById('addMaterialForm').reset();
+            loadMaterialsTable();
+        }
+    });
+}
+
+// Edit material
+function editMaterial(id) {
+    fetch(`/api/admin/materials/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const material = data.material;
+                document.getElementById('edit-material-id').value = material.id;
+                document.getElementById('edit-material-type').value = material.type;
+                document.getElementById('edit-material-title').value = material.title;
+                document.getElementById('edit-material-content').value = material.content || '';
+                
+                const imagePreview = document.getElementById('current-image-preview');
+                if (material.image_path) {
+                    imagePreview.innerHTML = `<img src="${material.image_path}" class="img-fluid rounded" style="max-height:200px;">`;
+                } else {
+                    imagePreview.innerHTML = '<p class="text-muted">Tidak ada gambar</p>';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
+                modal.show();
+            }
+        });
+}
+
+// Update material
+async function updateMaterial() {
+    const id = document.getElementById('edit-material-id').value;
+    const type = document.getElementById('edit-material-type').value;
+    const title = document.getElementById('edit-material-title').value;
+    const content = document.getElementById('edit-material-content').value;
+    const imageFile = document.getElementById('edit-material-image').files[0];
+    
+    let imagePath = '';
+    
+    // Upload new image if exists
+    if (imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        const uploadResponse = await fetch('/upload_image', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const uploadData = await uploadResponse.json();
+        if (uploadData.success) {
+            imagePath = uploadData.image_path;
+        }
+    }
+    
+    fetch(`/api/admin/materials/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type, title, content, image_path: imagePath})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Materi berhasil diupdate!');
+            bootstrap.Modal.getInstance(document.getElementById('editMaterialModal')).hide();
+            loadMaterialsTable();
+        }
+    });
+}
+
+// Delete material
+function deleteMaterial(id) {
+    if (confirm('Hapus materi ini?')) {
+        fetch(`/api/admin/materials/${id}`, {method: 'DELETE'})
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Materi berhasil dihapus!');
+                    loadMaterialsTable();
+                }
+            });
+    }
+}
+
+// Initialize
+loadMaterialsTable();
+</script>
+{% endblock %}

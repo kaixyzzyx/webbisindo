@@ -1,0 +1,516 @@
+{% extends "base.html" %}
+
+{% block title %}Latihan Kosakata Real-time - BISINDO{% endblock %}
+
+{% block content %}
+<!-- Success Modal -->
+<div id="success-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; border-radius: 15px; padding: 30px; max-width: 400px; text-align: center; animation: popIn 0.3s ease-out;">
+        <i class="fas fa-check-circle" style="font-size: 60px; color: #28a745; margin-bottom: 15px;"></i>
+        <h4 style="margin-bottom: 10px;">Berhasil!</h4>
+        <p style="font-size: 18px; margin-bottom: 5px;">Kata <strong id="modal-word">Halo</strong></p>
+        <p style="font-size: 24px; color: #28a745; font-weight: bold; margin-bottom: 20px;">Akurasi: <span id="modal-accuracy">95.0</span>%</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="modal-prev" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i> Sebelumnya
+            </button>
+            <button id="modal-next" class="btn btn-primary">
+                Lanjut <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-dumbbell"></i> Latihan Kosakata Real-time (Auto-detect)
+        </h2>
+        <p class="text-center text-muted mb-4">
+            Sistem akan otomatis mendeteksi gerakan dengan akurasi ≥50% dan langsung input jawaban
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-target"></i> Target: Kata <span id="current-word" class="text-primary">Halo</span></h5>
+                <div>
+                    <span class="badge bg-info" id="detection-timer">Waktu: 0s</span>
+                    <button class="btn btn-sm nav-btn nav-btn-prev me-2" id="prev-word">
+                        <i class="fas fa-chevron-left"></i> Sebelumnya
+                    </button>
+                    <button class="btn btn-sm nav-btn nav-btn-next" id="next-word">
+                        Lanjut <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Contoh Gerakan</h6>
+                        <div class="border rounded p-3 mb-3 text-center" style="height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div id="example-image">
+                                <i class="fas fa-hands fa-5x text-primary mb-2"></i>
+                            </div>
+                            <p class="small text-muted">Gerakan kata <span id="example-word">Halo</span></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Kamera Real-time</h6>
+                        <div class="border rounded" style="height: 200px; background: #000; position: relative;">
+                            <video id="practice-video" autoplay muted style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
+                            <div id="detection-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; display: none;">
+                                <div id="detected-gesture"></div>
+                                <div class="progress mt-2" style="height: 20px;">
+                                    <div id="hold-progress" class="progress-bar bg-success" style="width: 0%">0%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center gap-2">
+                            <button id="start-practice" class="btn btn-success">
+                                <i class="fas fa-play"></i> Mulai Latihan
+                            </button>
+                            <button id="stop-practice" class="btn btn-danger" disabled>
+                                <i class="fas fa-stop"></i> Berhenti
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Hasil Latihan</h6>
+            </div>
+            <div class="card-body">
+                <div id="practice-results">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                        <p>Mulai latihan untuk melihat hasil</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Cara Kerja Auto-detect</h6>
+            </div>
+            <div class="card-body">
+                <ol class="small">
+                    <li>Sistem mendeteksi gerakan secara real-time</li>
+                    <li>Jika akurasi ≥50%, jawaban langsung terinput</li>
+                    <li>Sistem otomatis menyimpan hasil</li>
+                    <li>Lanjut ke kata berikutnya</li>
+                </ol>
+                <div class="alert alert-warning small mt-3">
+                    <i class="fas fa-lightbulb"></i> Tip: Pertahankan posisi tangan stabil untuk hasil terbaik
+                </div>
+            </div>
+        </div>
+        
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load vocabulary data from database
+const materials = {{ materials|tojson|safe }};
+let vocabularyList = [];
+
+if (materials && materials.length > 0) {
+    materials.forEach(material => {
+        vocabularyList.push(material[2]); // title
+    });
+}
+
+// Show message if no vocabulary data from database
+if (vocabularyList.length === 0) {
+    document.querySelector('.col-lg-8 .card-body').innerHTML = `
+        <div class="alert alert-warning text-center">
+            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+            <h5>Belum Ada Data Kosakata</h5>
+            <p>Silakan hubungi admin untuk menambahkan data kosakata ke database.</p>
+        </div>
+    `;
+}
+
+let currentWordIndex = 0;
+let isDetecting = false;
+let detectionStartTime = null;
+let detectionInterval = null;
+let currentDetectedGesture = null;
+let holdDuration = 0;
+const REQUIRED_HOLD_TIME = 2000; // 2 seconds
+const ACCURACY_THRESHOLD = 0.5; // 50%
+
+// DOM elements
+const currentWordSpan = document.getElementById('current-word');
+const exampleWordSpan = document.getElementById('example-word');
+const practiceVideo = document.getElementById('practice-video');
+const startBtn = document.getElementById('start-practice');
+const stopBtn = document.getElementById('stop-practice');
+const nextBtn = document.getElementById('next-word');
+const prevBtn = document.getElementById('prev-word');
+const detectionOverlay = document.getElementById('detection-overlay');
+const detectedGestureDiv = document.getElementById('detected-gesture');
+const holdProgress = document.getElementById('hold-progress');
+const detectionTimer = document.getElementById('detection-timer');
+
+// Get word from URL parameter
+const urlParams = new URLSearchParams(window.location.search);
+const targetWord = urlParams.get('word');
+if (targetWord) {
+    const wordIndex = vocabularyList.indexOf(targetWord);
+    if (wordIndex !== -1) {
+        currentWordIndex = wordIndex;
+    }
+}
+
+// Initialize
+updateWordDisplay();
+updateNavigationButtons();
+
+// Event listeners
+startBtn.addEventListener('click', startPractice);
+stopBtn.addEventListener('click', stopPractice);
+nextBtn.addEventListener('click', () => changeWord(1));
+prevBtn.addEventListener('click', () => changeWord(-1));
+
+function updateWordDisplay() {
+    const currentWord = vocabularyList[currentWordIndex];
+    currentWordSpan.textContent = currentWord;
+    exampleWordSpan.textContent = currentWord;
+    
+    // Update example image
+    const exampleImageDiv = document.getElementById('example-image');
+    const material = materials.find(m => m[2] === currentWord);
+    if (material && material[4]) {
+        exampleImageDiv.innerHTML = `<img src="${material[4]}" alt="${currentWord}" style="max-width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">`;
+    } else {
+        exampleImageDiv.innerHTML = '<i class="fas fa-hands fa-5x text-primary mb-2"></i>';
+    }
+    
+    resetDetection();
+}
+
+function changeWord(direction) {
+    const newIndex = currentWordIndex + direction;
+    if (newIndex >= 0 && newIndex < vocabularyList.length) {
+        currentWordIndex = newIndex;
+        updateWordDisplay();
+        updateNavigationButtons();
+    } else if (newIndex >= vocabularyList.length) {
+        showNotification('Selamat! Anda telah menyelesaikan semua kosakata!', 'success');
+        stopPractice();
+    }
+}
+
+function updateNavigationButtons() {
+    if (isDetecting) {
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+    } else {
+        prevBtn.disabled = currentWordIndex === 0;
+        nextBtn.disabled = currentWordIndex === vocabularyList.length - 1;
+    }
+    
+    // Update button text based on position
+    if (currentWordIndex === vocabularyList.length - 1) {
+        nextBtn.innerHTML = 'Selesai <i class="fas fa-check"></i>';
+    } else {
+        nextBtn.innerHTML = 'Lanjut <i class="fas fa-chevron-right"></i>';
+    }
+}
+
+async function startPractice() {
+    try {
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Browser tidak mendukung akses kamera');
+        }
+        
+        // HTTPS check removed - getUserMedia will handle security
+        
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        });
+        practiceVideo.srcObject = stream;
+        
+        isDetecting = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        updateNavigationButtons();
+        
+        // Start real-time detection
+        startRealtimeDetection();
+        
+        showNotification('Latihan dimulai! Tunjukkan gerakan Anda', 'success');
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        let errorMessage = 'Tidak dapat mengakses kamera. ';
+        
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Izin kamera ditolak. Refresh halaman dan berikan izin kamera.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'Kamera tidak ditemukan pada perangkat ini.';
+        } else if (error.name === 'NotSupportedError') {
+            errorMessage += 'Browser tidak mendukung akses kamera.';
+        } else if (error.message) {
+            errorMessage += error.message;
+        }
+        
+        showNotification(errorMessage, 'danger');
+    }
+}
+
+function stopPractice() {
+    isDetecting = false;
+    
+    // Stop camera stream
+    if (practiceVideo.srcObject) {
+        const tracks = practiceVideo.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        practiceVideo.srcObject = null;
+    }
+    
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    
+    if (detectionInterval) {
+        clearInterval(detectionInterval);
+    }
+    
+    resetDetection();
+}
+
+function startRealtimeDetection() {
+    detectionInterval = setInterval(async () => {
+        if (!isDetecting) return;
+        
+        try {
+            // Check if video is ready
+            if (!practiceVideo.videoWidth || !practiceVideo.videoHeight) {
+                return;
+            }
+            
+            // Capture current frame
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(practiceVideo, 0, 0, 320, 240);
+            const imageData = canvas.toDataURL('image/jpeg', 0.7);
+            
+            // Send for detection
+            const response = await fetch('/detect_gesture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image: imageData, type: 'vocabulary'})
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.detections.length > 0) {
+                processDetection(result.detections);
+            } else {
+                resetDetection();
+            }
+        } catch (error) {
+            console.error('Detection error:', error);
+        }
+    }, 1000); // Check every 1000ms
+}
+
+function processDetection(detections) {
+    const currentWord = vocabularyList[currentWordIndex];
+    const bestDetection = detections.reduce((best, current) => 
+        current.confidence > best.confidence ? current : best
+    );
+    
+    const detectedClass = bestDetection.class;
+    const confidence = bestDetection.confidence;
+    
+    // Check if detected gesture matches target and meets threshold
+    if (detectedClass === currentWord && confidence >= ACCURACY_THRESHOLD) {
+        detectionOverlay.style.display = 'block';
+        detectedGestureDiv.innerHTML = `
+            <strong>${detectedClass}</strong><br>
+            <small>Akurasi: ${(confidence * 100).toFixed(1)}%</small>
+        `;
+        
+        // Langsung input jawaban tanpa menunggu hold timer
+        onGestureCompleted(currentWord, confidence * 100);
+    } else {
+        resetDetection();
+    }
+}
+
+function resetDetection() {
+    detectionStartTime = null;
+    holdDuration = 0;
+    holdProgress.style.width = '0%';
+    holdProgress.textContent = '0%';
+    detectionTimer.textContent = 'Waktu: 0s';
+    detectionOverlay.style.display = 'none';
+}
+
+async function onGestureCompleted(word, accuracy) {
+    // Stop detection immediately
+    isDetecting = false;
+    if (detectionInterval) clearInterval(detectionInterval);
+    resetDetection();
+    
+    // Save result to database
+    try {
+        const response = await fetch('/api/practice/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                practice_type: 'vocabulary',
+                target_gesture: word,
+                accuracy: accuracy
+            })
+        });
+        
+        if (response.ok) {
+            console.log(`Hasil latihan kata ${word} tersimpan`);
+        }
+    } catch (error) {
+        console.error('Error saving practice result:', error);
+    }
+    
+    // Show success
+    displayResults(word, word, accuracy);
+    
+    // Show navigation buttons
+    nextBtn.disabled = false;
+    prevBtn.disabled = false;
+    updateNavigationButtons();
+    
+    // Show success modal
+    showSuccessModal(word, accuracy);
+}
+
+function showSuccessModal(word, accuracy) {
+    const modal = document.getElementById('success-modal');
+    const modalWord = document.getElementById('modal-word');
+    const modalAccuracy = document.getElementById('modal-accuracy');
+    const modalPrev = document.getElementById('modal-prev');
+    const modalNext = document.getElementById('modal-next');
+    
+    modalWord.textContent = word;
+    modalAccuracy.textContent = accuracy.toFixed(1);
+    
+    // Update button states
+    modalPrev.disabled = currentWordIndex === 0;
+    modalNext.disabled = currentWordIndex === vocabularyList.length - 1;
+    
+    if (currentWordIndex === vocabularyList.length - 1) {
+        modalNext.innerHTML = 'Selesai <i class="fas fa-check"></i>';
+    } else {
+        modalNext.innerHTML = 'Lanjut <i class="fas fa-chevron-right"></i>';
+    }
+    
+    modal.style.display = 'flex';
+    
+    // Event listeners for modal buttons
+    modalPrev.onclick = () => {
+        modal.style.display = 'none';
+        changeWord(-1);
+        // Restart detection
+        isDetecting = true;
+        startRealtimeDetection();
+    };
+    
+    modalNext.onclick = () => {
+        modal.style.display = 'none';
+        if (currentWordIndex === vocabularyList.length - 1) {
+            showNotification('Selamat! Anda telah menyelesaikan semua kosakata!', 'success');
+        } else {
+            changeWord(1);
+            // Restart detection
+            isDetecting = true;
+            startRealtimeDetection();
+        }
+    };
+}
+
+function displayResults(targetWord, detectedWord, accuracy) {
+    const resultClass = accuracy >= 80 ? 'success' : 'warning';
+    const resultIcon = accuracy >= 80 ? 'check-circle' : 'exclamation-circle';
+    const resultText = accuracy >= 80 ? 'Sangat Baik' : 'Cukup Baik';
+    
+    const html = `
+        <div class="alert alert-${resultClass}">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fas fa-${resultIcon} fa-2x me-3"></i>
+                <div>
+                    <h6 class="mb-0">${resultText}</h6>
+                    <small>Target: ${targetWord} | Terdeteksi: ${detectedWord}</small>
+                </div>
+            </div>
+            <div class="progress mb-2">
+                <div class="progress-bar bg-${resultClass}" style="width: ${accuracy}%">${accuracy.toFixed(1)}%</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('practice-results').innerHTML = html;
+}
+
+// Simple notification function
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    stopPractice();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Beranda - BISINDO Learning Platform{% endblock %}
+
+{% block content %}
+<div class="hero-section bg-primary text-white py-5 mb-5 rounded">
+    <div class="container text-center">
+        <h1 class="display-4 mb-4">
+            <i class="fas fa-hands"></i> Selamat Datang 
+        </h1>
+        <p class="lead mb-4">Platform Pembelajaran Bahasa Isyarat Indonesia Interaktif</p>
+        <p class="mb-4">Belajar dan berlatih BISINDO dengan teknologi AI YOLOv11 untuk deteksi gerakan tangan real-time</p>
+        <a href="{{ url_for('learning_alphabet') }}" class="btn btn-light btn-lg">
+            <i class="fas fa-book"></i> Mulai Belajar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-graduation-cap fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">Modul Pembelajaran</h5>
+                <p class="card-text">Pelajari abjad A-Z dan kosakata dasar BISINDO dengan materi visual yang interaktif</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('learning_alphabet') }}" class="btn btn-primary">Abjad A-Z</a>
+                    <a href="{{ url_for('learning_vocabulary') }}" class="btn btn-outline-primary">Kosakata Dasar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-dumbbell fa-3x text-success mb-3"></i>
+                <h5 class="card-title">Modul Latihan</h5>
+                <p class="card-text">Berlatih gerakan tangan dengan deteksi AI real-time menggunakan kamera</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('practice_alphabet') }}" class="btn btn-primary">
+                        <i class="fas fa-bolt"></i> Latihan Abjad
+                    </a>
+                    <a href="{{ url_for('practice_vocabulary') }}" class="btn btn-success">Latihan Kosakata</a>
+                    <a href="{{ url_for('practice_quiz_alphabet') }}" class="btn btn-warning">
+                        <i class="fas fa-clipboard-check"></i> Latihan Soal Abjad
+                    </a>
+                    <a href="{{ url_for('practice_quiz_vocabulary') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-clipboard-check"></i> Latihan Soal Kosakata
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <h3 class="text-center mb-4">Fitur Utama Platform</h3>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="text-center">
+            <i class="fas fa-eye fa-2x text-info mb-2"></i>
+            <h6>Deteksi Real-time</h6>
+            <p class="small">Teknologi YOLOv11 untuk mendeteksi gerakan tangan secara akurat</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="text-center">
+            <i class="fas fa-chart-line fa-2x text-warning mb-2"></i>
+            <h6>Tracking Progress</h6>
+            <p class="small">Pantau kemajuan belajar dan hasil latihan Anda</p>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="text-center">
+            <i class="fas fa-universal-access fa-2x text-danger mb-2"></i>
+            <h6>Pembelajaran Inklusif</h6>
+            <p class="small">Mendukung pembelajaran untuk semua kalangan</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

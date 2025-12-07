@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Manajemen Soal - Admin BISINDO{% endblock %}
+
+{% block content %}
+<div class="d-flex">
+    <!-- Sidebar -->
+    <div class="bg-dark text-white" style="width: 250px; min-height: 100vh;">
+        <div class="p-3">
+            <h5><i class="fas fa-user-shield"></i> Admin Panel</h5>
+        </div>
+        <nav class="nav flex-column">
+            <a class="nav-link text-white" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i> Dashboard
+            </a>
+            <a class="nav-link text-white" href="{{ url_for('admin_materials') }}">
+                <i class="fas fa-book me-2"></i> Manajemen Materi
+            </a>
+            <a class="nav-link text-white active bg-primary" href="{{ url_for('admin_quiz') }}">
+                <i class="fas fa-question-circle me-2"></i> Manajemen Soal
+            </a>
+            <hr class="text-muted">
+            <a class="nav-link text-white" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i> Logout
+            </a>
+        </nav>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="flex-grow-1 p-4">
+        <h2 class="mb-4">
+            <i class="fas fa-question-circle"></i> Manajemen Soal
+        </h2>
+        
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-list"></i> Daftar Soal Latihan</h5>
+                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addQuizModal">
+                    <i class="fas fa-plus"></i> Tambah Soal
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <button class="btn btn-info" onclick="loadQuizTable()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tipe</th>
+                                <th>Pertanyaan</th>
+                                <th>Jawaban</th>
+                                <th>Kesulitan</th>
+                                <th>Dibuat</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quiz-table">
+                            <tr>
+                                <td colspan="7" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Quiz Modal -->
+<div class="modal fade" id="addQuizModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Tambah Soal Latihan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addQuizForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tipe</label>
+                        <select class="form-select" id="quiz-type" required>
+                            <option value="">Pilih Tipe</option>
+                            <option value="alphabet">Abjad</option>
+                            <option value="vocabulary">Kosakata</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Soal/Pertanyaan</label>
+                        <input type="text" class="form-control" id="quiz-question" placeholder="Contoh: AKUKAI atau Sapaan untuk bertemu" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Jawaban</label>
+                        <input type="text" class="form-control" id="quiz-answer" placeholder="Contoh: AKUKAI atau HALO" required>
+                        <small class="text-muted">Gunakan huruf kapital</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tingkat Kesulitan</label>
+                        <select class="form-select" id="quiz-difficulty">
+                            <option value="mudah">Mudah</option>
+                            <option value="sedang">Sedang</option>
+                            <option value="sulit">Sulit</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-success" onclick="addQuiz()">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Quiz Modal -->
+<div class="modal fade" id="editQuizModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Soal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editQuizForm">
+                    <input type="hidden" id="edit-quiz-id">
+                    <div class="mb-3">
+                        <label class="form-label">Tipe</label>
+                        <select class="form-select" id="edit-quiz-type" required>
+                            <option value="alphabet">Abjad</option>
+                            <option value="vocabulary">Kosakata</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Soal/Pertanyaan</label>
+                        <input type="text" class="form-control" id="edit-quiz-question" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Jawaban</label>
+                        <input type="text" class="form-control" id="edit-quiz-answer" required>
+                        <small class="text-muted">Gunakan huruf kapital</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tingkat Kesulitan</label>
+                        <select class="form-select" id="edit-quiz-difficulty">
+                            <option value="mudah">Mudah</option>
+                            <option value="sedang">Sedang</option>
+                            <option value="sulit">Sulit</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" onclick="updateQuiz()">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load quiz
+function loadQuizTable() {
+    fetch('/api/admin/quiz')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('quiz-table');
+                tbody.innerHTML = '';
+                data.quiz.forEach(quiz => {
+                    const difficultyColor = {
+                        'mudah': 'success',
+                        'sedang': 'warning',
+                        'sulit': 'danger'
+                    };
+                    
+                    const row = `
+                        <tr>
+                            <td>${quiz.id}</td>
+                            <td><span class="badge bg-info">${quiz.type}</span></td>
+                            <td>${quiz.question}</td>
+                            <td><strong>${quiz.answer}</strong></td>
+                            <td><span class="badge bg-${difficultyColor[quiz.difficulty]}">${quiz.difficulty}</span></td>
+                            <td>${quiz.created_at.split(' ')[0]}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="editQuiz(${quiz.id})">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteQuiz(${quiz.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
+        });
+}
+
+// Add quiz
+function addQuiz() {
+    const type = document.getElementById('quiz-type').value;
+    const question = document.getElementById('quiz-question').value;
+    const answer = document.getElementById('quiz-answer').value.toUpperCase();
+    const difficulty = document.getElementById('quiz-difficulty').value;
+    
+    if (!type || !question || !answer) {
+        alert('Semua field harus diisi!');
+        return;
+    }
+    
+    fetch('/api/admin/quiz', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type, question, answer, difficulty})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Soal berhasil ditambahkan!');
+            bootstrap.Modal.getInstance(document.getElementById('addQuizModal')).hide();
+            document.getElementById('addQuizForm').reset();
+            loadQuizTable();
+        }
+    });
+}
+
+// Edit quiz
+function editQuiz(id) {
+    fetch(`/api/admin/quiz/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const quiz = data.quiz;
+                document.getElementById('edit-quiz-id').value = quiz.id;
+                document.getElementById('edit-quiz-type').value = quiz.type;
+                document.getElementById('edit-quiz-question').value = quiz.question;
+                document.getElementById('edit-quiz-answer').value = quiz.answer;
+                document.getElementById('edit-quiz-difficulty').value = quiz.difficulty;
+                
+                const modal = new bootstrap.Modal(document.getElementById('editQuizModal'));
+                modal.show();
+            }
+        });
+}
+
+// Update quiz
+function updateQuiz() {
+    const id = document.getElementById('edit-quiz-id').value;
+    const type = document.getElementById('edit-quiz-type').value;
+    const question = document.getElementById('edit-quiz-question').value;
+    const answer = document.getElementById('edit-quiz-answer').value.toUpperCase();
+    const difficulty = document.getElementById('edit-quiz-difficulty').value;
+    
+    fetch(`/api/admin/quiz/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type, question, answer, difficulty})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Soal berhasil diupdate!');
+            bootstrap.Modal.getInstance(document.getElementById('editQuizModal')).hide();
+            loadQuizTable();
+        }
+    });
+}
+
+// Delete quiz
+function deleteQuiz(id) {
+    if (confirm('Hapus soal ini?')) {
+        fetch(`/api/admin/quiz/${id}`, {method: 'DELETE'})
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Soal berhasil dihapus!');
+                    loadQuizTable();
+                }
+            });
+    }
+}
+
+// Initialize
+loadQuizTable();
+</script>
+{% endblock %}

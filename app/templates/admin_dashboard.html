@@ -1,0 +1,325 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Dashboard - Admin BISINDO{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Dashboard Admin</h2>
+    
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="total-users">0</h4>
+                            <p class="mb-0">Total Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="total-materials">0</h4>
+                            <p class="mb-0">Total Materials</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-book fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 id="total-practice">0</h4>
+                            <p class="mb-0">Total Practice</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-dumbbell fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4>98%</h4>
+                            <p class="mb-0">Success Rate</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">All Users</h5>
+            <button class="btn btn-primary btn-sm" onclick="addUser()">
+                <i class="fas fa-plus me-1"></i> Add User
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table">
+                        <tr>
+                            <td colspan="5" class="text-center">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load stats
+fetch('/api/admin/stats')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('total-users').textContent = data.stats.totalUsers;
+            document.getElementById('total-materials').textContent = data.stats.totalMaterials;
+            document.getElementById('total-practice').textContent = data.stats.totalPractice;
+        }
+    });
+
+// Load users
+fetch('/api/admin/users')
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const tbody = document.getElementById('users-table');
+            tbody.innerHTML = '';
+            data.users.forEach(user => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.email}</td>
+                        <td><span class="badge bg-${user.role === 'admin' ? 'danger' : 'primary'}">${user.role}</span></td>
+                        <td>${user.created_at.split(' ')[0]}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editUser(${user.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id}, '${user.username}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    });
+
+function addUser() {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.style.backgroundColor = 'rgba(0,0,0,0.4)';
+    modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: none; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+                <div class="modal-header" style="border: none; padding: 2rem 2rem 1rem;">
+                    <h5 class="modal-title fw-bold" style="color: #2c3e50;">Tambah User Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding: 1rem 2rem;">
+                    <form id="addUserForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Username</label>
+                            <input type="text" class="form-control" name="username" required style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" name="email" required style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Password</label>
+                            <input type="password" class="form-control" name="password" required style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Role</label>
+                            <select class="form-control" name="role" style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="border: none; padding: 1rem 2rem 2rem; justify-content: center; gap: 1rem;">
+                    <button type="button" class="btn" data-bs-dismiss="modal" style="background: rgba(108,117,125,0.1); color: #6c757d; border: none; border-radius: 25px; padding: 0.8rem 2rem;">Batal</button>
+                    <button type="button" class="btn" onclick="saveUser()" style="background: linear-gradient(135deg, #3498db, #2980b9); color: white; border: none; border-radius: 25px; padding: 0.8rem 2rem;">Simpan</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    window.saveUser = function() {
+        const form = document.getElementById('addUserForm');
+        const formData = new FormData(form);
+        
+        fetch('/api/admin/users', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: formData.get('username'),
+                email: formData.get('email'),
+                password: formData.get('password'),
+                role: formData.get('role')
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error adding user: ' + (result.error || 'Unknown error'));
+            }
+        });
+        
+        bsModal.hide();
+        modal.remove();
+    };
+    
+    modal.addEventListener('hidden.bs.modal', () => {
+        modal.remove();
+    });
+}
+
+function editUser(userId) {
+    fetch(`/api/admin/users/${userId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const user = data.user;
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.style.backgroundColor = 'rgba(0,0,0,0.4)';
+                modal.innerHTML = `
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: none; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+                            <div class="modal-header" style="border: none; padding: 2rem 2rem 1rem;">
+                                <h5 class="modal-title fw-bold" style="color: #2c3e50;">Edit User</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" style="padding: 1rem 2rem;">
+                                <form id="editUserForm">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Username</label>
+                                        <input type="text" class="form-control" name="username" value="${user.username}" required style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Email</label>
+                                        <input type="email" class="form-control" name="email" value="${user.email}" required style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Password Baru (kosongkan jika tidak diubah)</label>
+                                        <input type="password" class="form-control" name="password" style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Role</label>
+                                        <select class="form-control" name="role" style="border: 2px solid #e8f4fd; border-radius: 15px; padding: 1rem;">
+                                            <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                            <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer" style="border: none; padding: 1rem 2rem 2rem; justify-content: center; gap: 1rem;">
+                                <button type="button" class="btn" data-bs-dismiss="modal" style="background: rgba(108,117,125,0.1); color: #6c757d; border: none; border-radius: 25px; padding: 0.8rem 2rem;">Batal</button>
+                                <button type="button" class="btn" onclick="updateUser(${userId})" style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; border-radius: 25px; padding: 0.8rem 2rem;">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+                
+                window.updateUser = function(id) {
+                    const form = document.getElementById('editUserForm');
+                    const formData = new FormData(form);
+                    
+                    fetch(`/api/admin/users/${id}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            username: formData.get('username'),
+                            email: formData.get('email'),
+                            password: formData.get('password'),
+                            role: formData.get('role')
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            location.reload();
+                        } else {
+                            alert('Error updating user: ' + (result.error || 'Unknown error'));
+                        }
+                    });
+                    
+                    bsModal.hide();
+                    modal.remove();
+                };
+                
+                modal.addEventListener('hidden.bs.modal', () => {
+                    modal.remove();
+                });
+            }
+        });
+}
+
+function deleteUser(userId, username) {
+    if (confirm(`Apakah Anda yakin ingin menghapus user "${username}"?`)) {
+        fetch(`/api/admin/users/${userId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error deleting user: ' + (result.error || 'Unknown error'));
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

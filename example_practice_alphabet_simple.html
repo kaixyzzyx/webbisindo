@@ -1,0 +1,101 @@
+<!-- Contoh implementasi sederhana menggunakan camera-utils.js -->
+<script>
+// Initialize camera and detection utilities
+const cameraUtils = new CameraUtils();
+const gestureDetector = new GestureDetector(cameraUtils);
+const holdTimer = new HoldTimer(3000, 0.8); // 3 seconds, 80% accuracy
+
+// DOM elements
+const practiceVideo = document.getElementById('practice-video');
+const startBtn = document.getElementById('start-practice');
+const stopBtn = document.getElementById('stop-practice');
+const detectionOverlay = document.getElementById('detection-overlay');
+const detectedGestureDiv = document.getElementById('detected-gesture');
+const holdProgress = document.getElementById('hold-progress');
+
+// Current target letter
+let currentLetter = 'A';
+
+// Setup hold timer callbacks
+holdTimer.setProgressCallback((progress, elapsed, gesture, confidence) => {
+    if (gesture) {
+        detectionOverlay.style.display = 'block';
+        detectedGestureDiv.innerHTML = `
+            <strong>${gesture}</strong><br>
+            <small>Akurasi: ${(confidence * 100).toFixed(1)}%</small>
+        `;
+        holdProgress.style.width = progress + '%';
+        holdProgress.textContent = (elapsed / 1000).toFixed(1) + 's';
+    } else {
+        detectionOverlay.style.display = 'none';
+        holdProgress.style.width = '0%';
+        holdProgress.textContent = '0%';
+    }
+});
+
+holdTimer.setCompletionCallback(async (gesture, confidence) => {
+    // Save result and show success
+    await savePracticeResult('alphabet', gesture, confidence * 100);
+    showNotification(`Huruf ${gesture} berhasil! Akurasi: ${(confidence * 100).toFixed(1)}%`, 'success');
+    
+    // Move to next letter or complete
+    moveToNextLetter();
+});
+
+// Start practice
+async function startPractice() {
+    try {
+        await cameraUtils.initCamera(practiceVideo);
+        
+        // Start gesture detection
+        gestureDetector.startDetection((detections) => {
+            holdTimer.processDetection(detections, currentLetter);
+        }, 'alphabet', 500);
+        
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        
+        showNotification('Latihan dimulai! Tunjukkan gerakan Anda', 'success');
+    } catch (error) {
+        showNotification(error.message, 'danger');
+    }
+}
+
+// Stop practice
+function stopPractice() {
+    gestureDetector.stopDetection();
+    cameraUtils.stopCamera();
+    holdTimer.reset();
+    
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+}
+
+// Save practice result
+async function savePracticeResult(type, gesture, accuracy) {
+    try {
+        const response = await fetch('/api/practice/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                practice_type: type,
+                target_gesture: gesture,
+                accuracy: accuracy
+            })
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to save practice result');
+        }
+    } catch (error) {
+        console.error('Error saving practice result:', error);
+    }
+}
+
+// Event listeners
+startBtn.addEventListener('click', startPractice);
+stopBtn.addEventListener('click', stopPractice);
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', stopPractice);
+</script>

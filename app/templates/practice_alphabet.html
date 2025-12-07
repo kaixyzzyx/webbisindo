@@ -1,0 +1,531 @@
+{% extends "base.html" %}
+
+{% block title %}Latihan Abjad - BISINDO{% endblock %}
+
+{% block content %}
+<!-- Success Modal -->
+<div id="success-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; border-radius: 15px; padding: 30px; max-width: 400px; text-align: center; animation: popIn 0.3s ease-out;">
+        <i class="fas fa-check-circle" style="font-size: 60px; color: #28a745; margin-bottom: 15px;"></i>
+        <h4 style="margin-bottom: 10px;">Berhasil!</h4>
+        <p style="font-size: 18px; margin-bottom: 5px;">Huruf <strong id="modal-letter">A</strong></p>
+        <p style="font-size: 24px; color: #28a745; font-weight: bold; margin-bottom: 20px;">Akurasi: <span id="modal-accuracy">95.0</span>%</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="modal-prev" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i> Sebelumnya
+            </button>
+            <button id="modal-next" class="btn btn-primary">
+                Lanjut <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+</style>
+
+<div class="row">
+    <div class="col-12">
+        <h2 class="text-center mb-4">
+            <i class="fas fa-dumbbell"></i> Latihan Abjad
+        </h2>
+        <p class="text-center text-muted mb-4">
+            Sistem akan otomatis mendeteksi gerakan dengan akurasi ≥50% dan langsung input jawaban
+        </p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-target"></i> Target: Huruf <span id="current-letter" class="text-primary">A</span></h5>
+                <div>
+                    <span class="badge bg-info" id="detection-timer">Waktu: 0s</span>
+                    <button class="btn btn-sm nav-btn nav-btn-prev me-2" id="prev-letter">
+                        <i class="fas fa-chevron-left"></i> Sebelumnya
+                    </button>
+                    <button class="btn btn-sm nav-btn nav-btn-next" id="next-letter">
+                        Lanjut <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Contoh Gerakan</h6>
+                        <div class="border rounded p-3 mb-3 text-center" style="height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                            <div id="example-image">
+                                <i class="fas fa-hand-paper fa-5x text-primary mb-2"></i>
+                            </div>
+                            <p class="small text-muted">Gerakan huruf <span id="example-letter">A</span></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Kamera Latihan</h6>
+                        <div class="border rounded" style="height: 200px; background: #000; position: relative;">
+                            <video id="practice-video" autoplay muted style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
+                            <div id="detection-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; display: none;">
+                                <div id="detected-gesture"></div>
+                                <div class="progress mt-2" style="height: 20px;">
+                                    <div id="hold-progress" class="progress-bar bg-success" style="width: 0%">0%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center gap-2">
+                            <button id="start-practice" class="btn btn-success">
+                                <i class="fas fa-play"></i> Mulai Latihan
+                            </button>
+                            <button id="stop-practice" class="btn btn-danger" disabled>
+                                <i class="fas fa-stop"></i> Berhenti
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Hasil Latihan</h6>
+            </div>
+            <div class="card-body">
+                <div id="practice-results">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                        <p>Mulai latihan untuk melihat hasil</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Cara Latihan</h6>
+            </div>
+            <div class="card-body">
+                <ol class="small">
+                    <li>Lihat contoh gerakan huruf</li>
+                    <li>Mulai kamera untuk latihan</li>
+                    <li>Praktikkan gerakan sesuai panduan</li>
+                    <li>Jika akurasi ≥50%, jawaban langsung terinput</li>
+                    <li>Gunakan tombol navigasi untuk berpindah huruf</li>
+                </ol>
+                <div class="alert alert-info small mt-3">
+                    <i class="fas fa-lightbulb"></i> Tip: Pastikan pencahayaan cukup dan posisi tangan jelas terlihat
+                </div>
+                <div class="alert alert-warning small mt-2">
+                    <i class="fas fa-mobile-alt"></i> Mobile: Gunakan HTTPS untuk akses kamera
+                </div>
+            </div>
+        </div>
+        
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load materials from database
+const materials = {{ materials|tojson|safe }};
+const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+let currentLetterIndex = 0;
+let isDetecting = false;
+let detectionStartTime = null;
+let detectionInterval = null;
+let currentDetectedGesture = null;
+let holdDuration = 0;
+const REQUIRED_HOLD_TIME = 2000; // 2 seconds (not used)
+const ACCURACY_THRESHOLD = 0.5; // 50%
+
+// DOM elements
+const currentLetterSpan = document.getElementById('current-letter');
+const exampleLetterSpan = document.getElementById('example-letter');
+const practiceVideo = document.getElementById('practice-video');
+const startBtn = document.getElementById('start-practice');
+const stopBtn = document.getElementById('stop-practice');
+const nextBtn = document.getElementById('next-letter');
+const prevBtn = document.getElementById('prev-letter');
+const detectionOverlay = document.getElementById('detection-overlay');
+const detectedGestureDiv = document.getElementById('detected-gesture');
+const holdProgress = document.getElementById('hold-progress');
+const detectionTimer = document.getElementById('detection-timer');
+
+// Get letter from URL parameter
+const urlParams = new URLSearchParams(window.location.search);
+const targetLetter = urlParams.get('letter');
+if (targetLetter) {
+    const letterIndex = alphabet.indexOf(targetLetter.toUpperCase());
+    if (letterIndex !== -1) {
+        currentLetterIndex = letterIndex;
+    }
+}
+
+// Initialize
+updateLetterDisplay();
+updateNavigationButtons();
+
+// Event listeners
+startBtn.addEventListener('click', startPractice);
+stopBtn.addEventListener('click', stopPractice);
+nextBtn.addEventListener('click', () => changeLetter(1));
+prevBtn.addEventListener('click', () => changeLetter(-1));
+document.getElementById('test-save').addEventListener('click', testSave);
+
+
+function updateLetterDisplay() {
+    const currentLetter = alphabet[currentLetterIndex];
+    currentLetterSpan.textContent = currentLetter;
+    exampleLetterSpan.textContent = currentLetter;
+    
+    // Update example image
+    const exampleImageDiv = document.getElementById('example-image');
+    const material = materials.find(m => m[2] === currentLetter);
+    if (material && material[4]) {
+        exampleImageDiv.innerHTML = `<img src="${material[4]}" alt="${currentLetter}" style="max-width: 100%; max-height: 150px; object-fit: contain; border-radius: 8px;">`;
+    } else {
+        exampleImageDiv.innerHTML = '<i class="fas fa-hand-paper fa-5x text-primary mb-2"></i>';
+    }
+    
+    // Clear previous results
+    document.getElementById('practice-results').innerHTML = `
+        <div class="text-center text-muted">
+            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+            <p>Mulai latihan untuk melihat hasil</p>
+        </div>
+    `;
+    
+    resetDetection();
+}
+
+function changeLetter(direction) {
+    const newIndex = currentLetterIndex + direction;
+    if (newIndex >= 0 && newIndex < alphabet.length) {
+        currentLetterIndex = newIndex;
+        updateLetterDisplay();
+        
+        // Reset detection state for new letter
+        resetDetection();
+        
+        // If camera is active, restart detection
+        if (practiceVideo.srcObject) {
+            isDetecting = true;
+            startRealtimeDetection();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        }
+        
+        updateNavigationButtons();
+    } else if (newIndex >= alphabet.length) {
+        showNotification('Selamat! Anda telah menyelesaikan semua huruf!', 'success');
+        stopPractice();
+    }
+}
+
+function updateNavigationButtons() {
+    if (isDetecting) {
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+    } else {
+        prevBtn.disabled = currentLetterIndex === 0;
+        nextBtn.disabled = currentLetterIndex === alphabet.length - 1;
+    }
+    
+    // Update button text based on position
+    if (currentLetterIndex === alphabet.length - 1) {
+        nextBtn.innerHTML = 'Selesai <i class="fas fa-check"></i>';
+    } else {
+        nextBtn.innerHTML = 'Lanjut <i class="fas fa-chevron-right"></i>';
+    }
+}
+
+async function startPractice() {
+    console.log('Starting practice...');
+    try {
+        // Check if getUserMedia is supported
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error('Browser tidak mendukung akses kamera');
+        }
+        
+        // HTTPS check removed - getUserMedia will handle security
+        
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user',
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            } 
+        });
+        practiceVideo.srcObject = stream;
+        
+        isDetecting = true;
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        updateNavigationButtons();
+        
+        // Start real-time detection
+        startRealtimeDetection();
+        
+        showNotification('Latihan dimulai! Tunjukkan gerakan Anda', 'success');
+    } catch (error) {
+        console.error('Error accessing camera:', error);
+        let errorMessage = 'Tidak dapat mengakses kamera. ';
+        
+        if (error.name === 'NotAllowedError') {
+            errorMessage += 'Izin kamera ditolak. Refresh halaman dan berikan izin kamera.';
+        } else if (error.name === 'NotFoundError') {
+            errorMessage += 'Kamera tidak ditemukan pada perangkat ini.';
+        } else if (error.name === 'NotSupportedError') {
+            errorMessage += 'Browser tidak mendukung akses kamera.';
+        } else if (error.message) {
+            errorMessage += error.message;
+        }
+        
+        showNotification(errorMessage, 'danger');
+    }
+}
+
+function stopPractice() {
+    isDetecting = false;
+    
+    // Stop camera stream
+    if (practiceVideo.srcObject) {
+        const tracks = practiceVideo.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+        practiceVideo.srcObject = null;
+    }
+    
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    
+    if (detectionInterval) {
+        clearInterval(detectionInterval);
+    }
+    
+    resetDetection();
+}
+
+function startRealtimeDetection() {
+    if (detectionInterval) {
+        clearInterval(detectionInterval);
+    }
+    
+    detectionInterval = setInterval(async () => {
+        if (!isDetecting) return;
+        
+        try {
+            // Check if video is ready
+            if (!practiceVideo.videoWidth || !practiceVideo.videoHeight) {
+                return;
+            }
+            
+            // Capture current frame
+            const canvas = document.createElement('canvas');
+            canvas.width = 320;
+            canvas.height = 240;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(practiceVideo, 0, 0, 320, 240);
+            const imageData = canvas.toDataURL('image/jpeg', 0.7);
+            
+            // Send for detection
+            const response = await fetch('/detect_gesture', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({image: imageData, type: 'alphabet'})
+            });
+            
+            const result = await response.json();
+            
+            if (result.success && result.detections.length > 0) {
+                processDetection(result.detections);
+            } else {
+                resetDetection();
+            }
+        } catch (error) {
+            console.error('Detection error:', error);
+        }
+    }, 1000); // Check every 1000ms
+}
+
+function processDetection(detections) {
+    const currentLetter = alphabet[currentLetterIndex];
+    const bestDetection = detections.reduce((best, current) => 
+        current.confidence > best.confidence ? current : best
+    );
+    
+    const detectedClass = bestDetection.class;
+    const confidence = bestDetection.confidence;
+    
+    // Check if detected gesture matches target and meets threshold
+    if (detectedClass === currentLetter && confidence >= ACCURACY_THRESHOLD) {
+        detectionOverlay.style.display = 'block';
+        detectedGestureDiv.innerHTML = `
+            <strong>${detectedClass}</strong><br>
+            <small>Akurasi: ${(confidence * 100).toFixed(1)}%</small>
+        `;
+        
+        // Langsung input jawaban tanpa menunggu hold timer
+        onGestureCompleted(currentLetter, confidence * 100);
+    } else {
+        resetDetection();
+    }
+}
+
+function resetDetection() {
+    detectionStartTime = null;
+    holdDuration = 0;
+    holdProgress.style.width = '0%';
+    holdProgress.textContent = '0%';
+    detectionTimer.textContent = 'Waktu: 0s';
+    detectionOverlay.style.display = 'none';
+}
+
+async function onGestureCompleted(letter, accuracy) {
+    console.log(`onGestureCompleted called with letter: ${letter}, accuracy: ${accuracy}`);
+    
+    // Stop detection temporarily
+    isDetecting = false;
+    if (detectionInterval) {
+        clearInterval(detectionInterval);
+    }
+    
+    // Save result to database
+    try {
+        const response = await fetch('/api/practice/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                practice_type: 'alphabet',
+                target_gesture: letter,
+                accuracy: accuracy
+            })
+        });
+        
+        const result = await response.json();
+        if (response.ok && result.success) {
+            console.log(`Hasil latihan huruf ${letter} tersimpan`);
+        }
+    } catch (error) {
+        console.error('Error saving practice result:', error);
+    }
+    
+    // Show success
+    displayResults(letter, letter, accuracy);
+    
+
+    
+    // Show navigation buttons and disable start button
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+    nextBtn.disabled = false;
+    prevBtn.disabled = false;
+    updateNavigationButtons();
+    
+    // Show success modal
+    showSuccessModal(letter, accuracy);
+}
+
+function showSuccessModal(letter, accuracy) {
+    const modal = document.getElementById('success-modal');
+    const modalLetter = document.getElementById('modal-letter');
+    const modalAccuracy = document.getElementById('modal-accuracy');
+    const modalPrev = document.getElementById('modal-prev');
+    const modalNext = document.getElementById('modal-next');
+    
+    modalLetter.textContent = letter;
+    modalAccuracy.textContent = accuracy.toFixed(1);
+    
+    // Update button states
+    modalPrev.disabled = currentLetterIndex === 0;
+    modalNext.disabled = currentLetterIndex === alphabet.length - 1;
+    
+    if (currentLetterIndex === alphabet.length - 1) {
+        modalNext.innerHTML = 'Selesai <i class="fas fa-check"></i>';
+    } else {
+        modalNext.innerHTML = 'Lanjut <i class="fas fa-chevron-right"></i>';
+    }
+    
+    modal.style.display = 'flex';
+    
+    // Event listeners for modal buttons
+    modalPrev.onclick = () => {
+        modal.style.display = 'none';
+        changeLetter(-1);
+    };
+    
+    modalNext.onclick = () => {
+        modal.style.display = 'none';
+        if (currentLetterIndex === alphabet.length - 1) {
+            showNotification('Selamat! Anda telah menyelesaikan semua huruf!', 'success');
+        } else {
+            changeLetter(1);
+        }
+    };
+}
+
+function displayResults(targetLetter, detectedLetter, accuracy) {
+    const resultClass = accuracy >= 80 ? 'success' : 'warning';
+    const resultIcon = accuracy >= 80 ? 'check-circle' : 'exclamation-circle';
+    const resultText = accuracy >= 80 ? 'Sangat Baik' : 'Cukup Baik';
+    
+    const html = `
+        <div class="alert alert-${resultClass}">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fas fa-${resultIcon} fa-2x me-3"></i>
+                <div>
+                    <h6 class="mb-0">${resultText}</h6>
+                    <small>Target: ${targetLetter} | Terdeteksi: ${detectedLetter}</small>
+                </div>
+            </div>
+            <div class="progress mb-2">
+                <div class="progress-bar bg-${resultClass}" style="width: ${accuracy}%">${accuracy.toFixed(1)}%</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('practice-results').innerHTML = html;
+}
+
+// Simple notification function
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', function() {
+    stopPractice();
+});
+</script>
+{% endblock %}

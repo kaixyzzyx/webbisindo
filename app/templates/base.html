@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BISINDO Learning Platform{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/auth.css') }}" rel="stylesheet">
+</head>
+<body>
+    {% if session.role != 'admin' %}
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); box-shadow: 0 2px 15px rgba(0,0,0,0.1);">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% if session.user_id %}{{ url_for('index') }}{% else %}{{ url_for('landing') }}{% endif %}" style="font-size: 1.4rem; letter-spacing: 1px;">
+                <i class="fas fa-hands" style="color: #ffd700;"></i> <span style="color: #fff;">BISINDO</span>
+            </a>
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" style="padding: 0.5rem;">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto ms-lg-4">
+                    {% if session.user_id and session.role != 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('index') }}" style="transition: all 0.3s;">
+                            <i class="fas fa-home me-1"></i> Beranda
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle px-3" href="#" id="learningDropdown" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s;">
+                            <i class="fas fa-book-open me-1"></i> Pembelajaran
+                        </a>
+                        <ul class="dropdown-menu" style="border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-radius: 10px; margin-top: 0.5rem;">
+                            <li><a class="dropdown-item py-2" href="{{ url_for('learning_alphabet') }}" style="transition: all 0.3s;"><i class="fas fa-font me-2 text-primary"></i> Abjad A-Z</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ url_for('learning_vocabulary') }}" style="transition: all 0.3s;"><i class="fas fa-book me-2 text-success"></i> Kosakata Dasar</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle px-3" href="#" id="practiceDropdown" role="button" data-bs-toggle="dropdown" style="transition: all 0.3s;">
+                            <i class="fas fa-dumbbell me-1"></i> Latihan
+                        </a>
+                        <ul class="dropdown-menu" style="border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-radius: 10px; margin-top: 0.5rem;">
+                            <li><a class="dropdown-item py-2" href="{{ url_for('practice_quiz_alphabet') }}" style="transition: all 0.3s;"><i class="fas fa-clipboard-check me-2 text-warning"></i> Latihan Soal Abjad</a></li>
+                            <li><a class="dropdown-item py-2" href="{{ url_for('practice_quiz_vocabulary') }}" style="transition: all 0.3s;"><i class="fas fa-clipboard-list me-2 text-info"></i> Latihan Soal Kosakata</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link px-3" href="{{ url_for('history') }}" style="transition: all 0.3s;">
+                            <i class="fas fa-history me-1"></i> Riwayat
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    {% if session.user_id %}
+                        <li class="nav-item">
+                            <span class="nav-link" style="background: rgba(255,255,255,0.1); border-radius: 20px; padding: 0.5rem 1rem; margin-right: 0.5rem;">
+                                <i class="fas fa-user-circle me-1"></i> {{ session.username }}
+                            </span>
+                        </li>
+                        {% if session.role != 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="confirmLogout()" style="background: rgba(220,53,69,0.2); border-radius: 20px; padding: 0.5rem 1rem; transition: all 0.3s;" onmouseover="this.style.background='rgba(220,53,69,0.3)'" onmouseout="this.style.background='rgba(220,53,69,0.2)'">
+                                <i class="fas fa-sign-out-alt me-1"></i> Keluar
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    {% if session.role == 'admin' %}
+        {% block admin_content %}{% endblock %}
+    {% else %}
+        <div class="main-wrapper">
+            <main class="container mt-4 flex-grow-1">
+                {% block content %}{% endblock %}
+            </main>
+
+            <footer class="footer-auth bg-dark text-light py-3">
+                <div class="container-fluid text-center">
+                    <p class="mb-0">&copy; 2025 Platform Pembelajaran BISINDO</p>
+                </div>
+            </footer>
+        </div>
+    {% endif %}
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/https-check.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/camera-utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Logout confirmation function
+        function confirmLogout() {
+            showLogoutModal();
+        }
+
+        function showLogoutModal() {
+            const modal = document.createElement('div');
+            modal.className = 'logout-modal-overlay';
+            modal.innerHTML = `
+                <div class="logout-modal">
+                    <div class="logout-modal-icon">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </div>
+                    <h4>Konfirmasi Keluar</h4>
+                    <p>Apakah Anda yakin ingin keluar dari akun?</p>
+                    <div class="logout-modal-buttons">
+                        <button class="btn-cancel" onclick="closeLogoutModal()">Batal</button>
+                        <button class="btn-confirm" onclick="doLogout()">Ya, Keluar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            setTimeout(() => modal.classList.add('show'), 10);
+        }
+
+        function closeLogoutModal() {
+            const modal = document.querySelector('.logout-modal-overlay');
+            modal.classList.remove('show');
+            setTimeout(() => modal.remove(), 300);
+        }
+
+        function doLogout() {
+            closeLogoutModal();
+            showNotification('Keluar berhasil', 'success');
+            setTimeout(() => {
+                window.location.href = '{{ url_for("logout") }}';
+            }, 1000);
+        }
+
+        // Notification function
+        function showNotification(message, type = 'success') {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show notification-popup`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            container.appendChild(notification);
+            
+            // Handle close button
+            const closeBtn = notification.querySelector('.btn-close');
+            closeBtn.addEventListener('click', () => {
+                notification.classList.add('fade-out');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            });
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.classList.add('fade-out');
+                    setTimeout(() => {
+                        if (notification.parentNode) {
+                            notification.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
