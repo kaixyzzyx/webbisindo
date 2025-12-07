@@ -26,6 +26,43 @@
     0% { transform: scale(0.5); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
 }
+
+/* Mobile button fix */
+.btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#start-practice, #stop-practice {
+    min-height: 48px;
+    min-width: 120px;
+    font-size: 16px;
+    padding: 12px 24px;
+}
+
+/* Prevent zoom on mobile */
+input, select, textarea, button {
+    font-size: 16px !important;
+}
+
+@media (max-width: 768px) {
+    .btn {
+        padding: 12px 20px;
+        font-size: 14px;
+    }
+    
+    #start-practice, #stop-practice {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 10px !important;
+    }
+}
 </style>
 
 <div class="row">
@@ -162,7 +199,7 @@ let detectionInterval = null;
 let currentDetectedGesture = null;
 let holdDuration = 0;
 const REQUIRED_HOLD_TIME = 2000; // 2 seconds
-const ACCURACY_THRESHOLD = 0.5; // 50%
+const ACCURACY_THRESHOLD = 0.4; // 40% - Lower threshold for better detection
 
 // DOM elements
 const currentWordSpan = document.getElementById('current-word');
@@ -334,13 +371,13 @@ function startRealtimeDetection() {
                 return;
             }
             
-            // Capture current frame
+            // Capture current frame with better quality for mobile
             const canvas = document.createElement('canvas');
-            canvas.width = 320;
-            canvas.height = 240;
+            canvas.width = 640;
+            canvas.height = 480;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(practiceVideo, 0, 0, 320, 240);
-            const imageData = canvas.toDataURL('image/jpeg', 0.7);
+            ctx.drawImage(practiceVideo, 0, 0, 640, 480);
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
             
             // Send for detection
             const response = await fetch('/detect_gesture', {
@@ -359,7 +396,7 @@ function startRealtimeDetection() {
         } catch (error) {
             console.error('Detection error:', error);
         }
-    }, 1000); // Check every 1000ms
+    }, 800); // Check every 800ms for better responsiveness
 }
 
 function processDetection(detections) {

@@ -522,8 +522,8 @@ def detect_gesture():
         # Select model based on type
         model = model_huruf if detection_type == 'alphabet' else model_kata
         
-        # YOLO prediction
-        results = model.predict(source=frame, conf=0.25, imgsz=640, verbose=False)
+        # YOLO prediction with lower confidence for better detection
+        results = model.predict(source=frame, conf=0.20, imgsz=640, verbose=False)
         
         # Extract detection results
         detections = []
