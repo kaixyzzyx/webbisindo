@@ -525,17 +525,27 @@ def detect_gesture():
         # YOLO prediction with lower confidence for better detection
         results = model.predict(source=frame, conf=0.20, imgsz=640, verbose=False)
         
-        # Extract detection results
+        # Extract detection results - ONLY return the highest confidence detection
         detections = []
         if len(results[0].boxes) > 0:
+            # Find the detection with highest confidence
+            best_box = None
+            best_confidence = 0
+            
             for box in results[0].boxes:
-                class_id = int(box.cls[0])
                 confidence = float(box.conf[0])
+                if confidence > best_confidence:
+                    best_confidence = confidence
+                    best_box = box
+            
+            # Only add the best detection
+            if best_box is not None:
+                class_id = int(best_box.cls[0])
                 class_name = model.names[class_id]
                 
                 detections.append({
                     'class': class_name,
-                    'confidence': confidence
+                    'confidence': best_confidence
                 })
         
         return jsonify({

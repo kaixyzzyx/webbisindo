@@ -119,8 +119,8 @@ function renderAlphabet(data) {
                     </div>
                     <div class="alphabet-image mb-3">
                         ${materials.find(m => m[2] === item.letter && m[4]) ? 
-                            `<img src="${materials.find(m => m[2] === item.letter)[4]}" alt="${item.letter}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">` :
-                            '<i class="fas fa-hand-paper fa-3x text-primary opacity-75"></i>'
+                            `<img src="${materials.find(m => m[2] === item.letter)[4]}" alt="${item.letter}">` :
+                            '<i class="fas fa-hand-paper"></i>'
                         }
                     </div>
                     <div class="mb-3">${statusBadge}</div>
@@ -210,10 +210,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .alphabet-image {
-            height: 80px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: white;
+        }
+        
+        .alphabet-image img {
+            width: 100px !important;
+            height: 100px !important;
+            object-fit: contain !important;
+        }
+        
+        .alphabet-image i {
+            font-size: 3.5rem !important;
+            color: #007bff !important;
         }
     `;
     document.head.appendChild(style);

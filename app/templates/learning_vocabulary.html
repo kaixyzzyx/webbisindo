@@ -137,8 +137,8 @@ function renderVocabulary(data) {
                     </div>
                     <div class="vocabulary-image mb-3">
                         ${materials.find(m => m[2] === vocab.word && m[4]) ? 
-                            `<img src="${materials.find(m => m[2] === vocab.word)[4]}" alt="${vocab.word}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">` :
-                            '<i class="fas fa-hands fa-3x text-primary opacity-75"></i>'
+                            `<img src="${materials.find(m => m[2] === vocab.word)[4]}" alt="${vocab.word}">` :
+                            '<i class="fas fa-hands"></i>'
                         }
                     </div>
                     <div class="mb-3">${statusBadge}</div>
@@ -250,10 +250,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         .vocabulary-image {
-            height: 80px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: white;
+        }
+        
+        .vocabulary-image img {
+            width: 100px !important;
+            height: 100px !important;
+            object-fit: contain !important;
+        }
+        
+        .vocabulary-image i {
+            font-size: 3.5rem !important;
+            color: #007bff !important;
         }
     `;
     document.head.appendChild(style);
