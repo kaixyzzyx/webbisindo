@@ -66,6 +66,7 @@
                             <h6>Kamera Real-time</h6>
                             <div class="border rounded" style="height: 300px; background: #000; position: relative;">
                                 <video id="quiz-video" autoplay muted style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
+                                <canvas id="roi-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                                 <div id="detection-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 10px; border-radius: 5px; display: none;">
                                     <div id="detected-gesture"></div>
                                     <div class="progress mt-2" style="height: 20px;">
@@ -159,6 +160,7 @@ const ACCURACY_THRESHOLD = 0.5; // 50%
 
 // DOM elements
 const quizVideo = document.getElementById('quiz-video');
+const roiCanvas = document.getElementById('roi-canvas');
 const questionText = document.getElementById('question-text');
 const answerDisplay = document.getElementById('answer-display');
 const startBtn = document.getElementById('start-quiz');
@@ -208,6 +210,27 @@ function loadQuestion() {
     nextBtn.style.display = 'none';
 }
 
+function drawROI() {
+    const ctx = roiCanvas.getContext('2d');
+    roiCanvas.width = roiCanvas.offsetWidth;
+    roiCanvas.height = roiCanvas.offsetHeight;
+    
+    const boxWidth = roiCanvas.width * 0.5;
+    const boxHeight = roiCanvas.height * 0.7;
+    const x = (roiCanvas.width - boxWidth) / 2;
+    const y = (roiCanvas.height - boxHeight) / 2;
+    
+    ctx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 5]);
+    ctx.strokeRect(x, y, boxWidth, boxHeight);
+    
+    ctx.fillStyle = '#00ff00';
+    ctx.font = '14px Arial';
+    ctx.fillText('Posisikan tangan di sini', x + 10, y - 10);
+}
+
 async function startQuiz() {
     if (!startTime) startTime = Date.now();
     
@@ -239,6 +262,7 @@ async function startQuiz() {
         await new Promise((resolve) => {
             quizVideo.onloadedmetadata = () => {
                 quizVideo.play();
+                drawROI();
                 resolve();
             };
         });
@@ -305,11 +329,20 @@ function startRealtimeDetection() {
                 return;
             }
             
+            // Capture ROI area only
             const canvas = document.createElement('canvas');
-            canvas.width = 320;
-            canvas.height = 240;
+            const videoWidth = quizVideo.videoWidth;
+            const videoHeight = quizVideo.videoHeight;
+            
+            const roiWidth = videoWidth * 0.5;
+            const roiHeight = videoHeight * 0.7;
+            const roiX = (videoWidth - roiWidth) / 2;
+            const roiY = (videoHeight - roiHeight) / 2;
+            
+            canvas.width = roiWidth;
+            canvas.height = roiHeight;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(quizVideo, 0, 0, 320, 240);
+            ctx.drawImage(quizVideo, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
             const imageData = canvas.toDataURL('image/jpeg', 0.7);
             
             const response = await fetch('/detect_gesture', {
@@ -331,6 +364,8 @@ function startRealtimeDetection() {
     }, 1000);
 }
 
+let lastWrongGestureNotif = null;
+
 function processDetection(detections) {
     const targetLetter = targetAnswer[currentAnswer.length];
     const bestDetection = detections.reduce((best, current) => 
@@ -349,6 +384,14 @@ function processDetection(detections) {
         
         // Langsung input jawaban tanpa menunggu hold timer
         onLetterCompleted(detectedClass);
+    } else if (detectedClass !== targetLetter && confidence >= 0.75) {
+        // Show warning for wrong gesture with high confidence
+        if (lastWrongGestureNotif !== detectedClass) {
+            showNotification(`⚠️ Gerakan salah terdeteksi: Huruf "${detectedClass}" (${(confidence * 100).toFixed(1)}%). Target: "${targetLetter}"`, 'warning');
+            lastWrongGestureNotif = detectedClass;
+            setTimeout(() => { lastWrongGestureNotif = null; }, 3000);
+        }
+        resetDetection();
     } else {
         resetDetection();
     }

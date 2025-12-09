@@ -390,6 +390,8 @@ function startRealtimeDetection() {
     }, 800); // Check every 800ms for better responsiveness
 }
 
+let lastWrongGestureNotif = null;
+
 function processDetection(detections) {
     const currentWord = vocabularyList[currentWordIndex];
     const bestDetection = detections.reduce((best, current) => 
@@ -409,6 +411,14 @@ function processDetection(detections) {
         
         // Langsung input jawaban tanpa menunggu hold timer
         onGestureCompleted(currentWord, confidence * 100);
+    } else if (detectedClass !== currentWord && confidence >= 0.75) {
+        // Show warning for wrong gesture with high confidence
+        if (lastWrongGestureNotif !== detectedClass) {
+            showNotification(`⚠️ Gerakan salah terdeteksi: Kata "${detectedClass}" (${(confidence * 100).toFixed(1)}%). Target: "${currentWord}"`, 'warning');
+            lastWrongGestureNotif = detectedClass;
+            setTimeout(() => { lastWrongGestureNotif = null; }, 3000);
+        }
+        resetDetection();
     } else {
         resetDetection();
     }

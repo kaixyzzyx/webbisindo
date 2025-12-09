@@ -111,6 +111,7 @@ input, select, textarea, button {
                         <h6>Kamera Latihan</h6>
                         <div class="border rounded" style="height: 200px; background: #000; position: relative;">
                             <video id="practice-video" autoplay muted style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;"></video>
+                            <canvas id="roi-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
                             <div id="detection-overlay" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 10px; border-radius: 5px; display: none;">
                                 <div id="detected-gesture"></div>
                                 <div class="progress mt-2" style="height: 20px;">
@@ -182,6 +183,7 @@ const ACCURACY_THRESHOLD = 0.4; // 40% - Lower threshold for better detection
 const currentLetterSpan = document.getElementById('current-letter');
 const exampleLetterSpan = document.getElementById('example-letter');
 const practiceVideo = document.getElementById('practice-video');
+const roiCanvas = document.getElementById('roi-canvas');
 const startBtn = document.getElementById('start-practice');
 const stopBtn = document.getElementById('stop-practice');
 const nextBtn = document.getElementById('next-letter');
@@ -272,6 +274,27 @@ function updateNavigationButtons() {
     }
 }
 
+function drawROI() {
+    const ctx = roiCanvas.getContext('2d');
+    roiCanvas.width = roiCanvas.offsetWidth;
+    roiCanvas.height = roiCanvas.offsetHeight;
+    
+    const boxWidth = roiCanvas.width * 0.5;
+    const boxHeight = roiCanvas.height * 0.7;
+    const x = (roiCanvas.width - boxWidth) / 2;
+    const y = (roiCanvas.height - boxHeight) / 2;
+    
+    ctx.clearRect(0, 0, roiCanvas.width, roiCanvas.height);
+    ctx.strokeStyle = '#00ff00';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([10, 5]);
+    ctx.strokeRect(x, y, boxWidth, boxHeight);
+    
+    ctx.fillStyle = '#00ff00';
+    ctx.font = '14px Arial';
+    ctx.fillText('Posisikan tangan di sini', x + 10, y - 10);
+}
+
 async function startPractice() {
     console.log('Starting practice...');
     try {
@@ -301,6 +324,7 @@ async function startPractice() {
         await new Promise((resolve) => {
             practiceVideo.onloadedmetadata = () => {
                 practiceVideo.play();
+                drawROI();
                 resolve();
             };
         });
@@ -368,12 +392,20 @@ function startRealtimeDetection() {
                 return;
             }
             
-            // Capture current frame with better quality for mobile
+            // Capture ROI area only
             const canvas = document.createElement('canvas');
-            canvas.width = 640;
-            canvas.height = 480;
+            const videoWidth = practiceVideo.videoWidth;
+            const videoHeight = practiceVideo.videoHeight;
+            
+            const roiWidth = videoWidth * 0.5;
+            const roiHeight = videoHeight * 0.7;
+            const roiX = (videoWidth - roiWidth) / 2;
+            const roiY = (videoHeight - roiHeight) / 2;
+            
+            canvas.width = roiWidth;
+            canvas.height = roiHeight;
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(practiceVideo, 0, 0, 640, 480);
+            ctx.drawImage(practiceVideo, roiX, roiY, roiWidth, roiHeight, 0, 0, roiWidth, roiHeight);
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             
             // Send for detection
@@ -396,6 +428,8 @@ function startRealtimeDetection() {
     }, 800); // Check every 800ms for better responsiveness
 }
 
+let lastWrongGestureNotif = null;
+
 function processDetection(detections) {
     const currentLetter = alphabet[currentLetterIndex];
     const bestDetection = detections.reduce((best, current) => 
@@ -415,6 +449,14 @@ function processDetection(detections) {
         
         // Langsung input jawaban tanpa menunggu hold timer
         onGestureCompleted(currentLetter, confidence * 100);
+    } else if (detectedClass !== currentLetter && confidence >= 0.75) {
+        // Show warning for wrong gesture with high confidence
+        if (lastWrongGestureNotif !== detectedClass) {
+            showNotification(`⚠️ Gerakan salah terdeteksi: Huruf "${detectedClass}" (${(confidence * 100).toFixed(1)}%). Target: "${currentLetter}"`, 'warning');
+            lastWrongGestureNotif = detectedClass;
+            setTimeout(() => { lastWrongGestureNotif = null; }, 3000);
+        }
+        resetDetection();
     } else {
         resetDetection();
     }
