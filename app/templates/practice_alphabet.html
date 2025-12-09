@@ -238,11 +238,8 @@ function changeLetter(direction) {
     if (newIndex >= 0 && newIndex < alphabet.length) {
         currentLetterIndex = newIndex;
         updateLetterDisplay();
-        
-        // Reset detection state for new letter
         resetDetection();
         
-        // If camera is active, restart detection
         if (practiceVideo.srcObject) {
             isDetecting = true;
             startRealtimeDetection();
@@ -258,15 +255,9 @@ function changeLetter(direction) {
 }
 
 function updateNavigationButtons() {
-    if (isDetecting) {
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-    } else {
-        prevBtn.disabled = currentLetterIndex === 0;
-        nextBtn.disabled = currentLetterIndex === alphabet.length - 1;
-    }
+    prevBtn.disabled = currentLetterIndex === 0;
+    nextBtn.disabled = currentLetterIndex === alphabet.length - 1;
     
-    // Update button text based on position
     if (currentLetterIndex === alphabet.length - 1) {
         nextBtn.innerHTML = 'Selesai <i class="fas fa-check"></i>';
     } else {
@@ -368,14 +359,13 @@ function stopPractice() {
     
     startBtn.disabled = false;
     stopBtn.disabled = true;
-    prevBtn.disabled = true;
-    nextBtn.disabled = true;
     
     if (detectionInterval) {
         clearInterval(detectionInterval);
     }
     
     resetDetection();
+    updateNavigationButtons();
 }
 
 function startRealtimeDetection() {

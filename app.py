@@ -1092,6 +1092,14 @@ def get_user_stats():
             cursor.execute('SELECT COUNT(DISTINCT target_gesture) FROM practice_results WHERE user_id = %s AND practice_type = "vocabulary" AND accuracy >= 80', (user_id,))
             mastered_vocab = cursor.fetchone()[0]
             
+            # Total soal abjad yang sudah dikerjakan
+            cursor.execute('SELECT COUNT(DISTINCT quiz_id) FROM quiz_results WHERE user_id = %s AND quiz_id IN (SELECT id FROM quiz_questions WHERE type = "alphabet")', (user_id,))
+            total_quiz_alphabet = cursor.fetchone()[0]
+            
+            # Total soal kosakata yang sudah dikerjakan
+            cursor.execute('SELECT COUNT(DISTINCT quiz_id) FROM quiz_results WHERE user_id = %s AND quiz_id IN (SELECT id FROM quiz_questions WHERE type = "vocabulary")', (user_id,))
+            total_quiz_vocabulary = cursor.fetchone()[0]
+            
             # Progress 7 hari terakhir
             cursor.execute('''
                 SELECT DATE(completed_at) as date, AVG(accuracy) as avg_acc 
@@ -1180,6 +1188,8 @@ def get_user_stats():
                     'avgAccuracy': round(float(avg_accuracy), 1),
                     'masteredLetters': mastered_letters,
                     'masteredVocab': mastered_vocab,
+                    'totalQuizAlphabet': total_quiz_alphabet,
+                    'totalQuizVocabulary': total_quiz_vocabulary,
                     'chartData': chart_data,
                     'chartLabels': chart_labels,
                     'recentHistory': history_list

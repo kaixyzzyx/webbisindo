@@ -77,27 +77,64 @@
     </div>
 </div>
 
+<div class="row mb-4">
+    <div class="col-md-6 mb-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Soal Abjad</h6>
+                        <h3 id="total-quiz-alphabet">0</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-3">
+        <div class="card bg-dark text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Total Soal Kosakata</h6>
+                        <h3 id="total-quiz-vocabulary">0</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5><i class="fas fa-history"></i> Riwayat Latihan Terbaru</h5>
+        <div class="card shadow-sm" style="border: none; border-radius: 15px; overflow: hidden;">
+            <div class="card-header bg-primary" style="border: none;">
+                <h5 class="text-white mb-0"><i class="fas fa-history"></i> Riwayat Latihan Terbaru</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
+                    <table class="table table-hover mb-0">
+                        <thead class="bg-primary text-white">
                             <tr>
-                                <th>Tanggal</th>
-                                <th>Jenis</th>
-                                <th>Target</th>
-                                <th>Akurasi</th>
-                                <th>Status</th>
+                                <th class="border-0"><i class="fas fa-calendar-alt"></i> Tanggal</th>
+                                <th class="border-0"><i class="fas fa-tag"></i> Jenis</th>
+                                <th class="border-0"><i class="fas fa-bullseye"></i> Target</th>
+                                <th class="border-0"><i class="fas fa-chart-line"></i> Akurasi</th>
+                                <th class="border-0 text-center"><i class="fas fa-check-circle"></i> Status</th>
                             </tr>
                         </thead>
                         <tbody id="practice-history">
                             <tr>
-                                <td colspan="5" class="text-center text-muted">Belum ada riwayat latihan</td>
+                                <td colspan="5" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                    <p class="mb-0">Belum ada riwayat latihan</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -105,9 +142,16 @@
             </div>
         </div>
     </div>
-    
-
 </div>
+
+<style>
+.table-hover tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.005);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
@@ -126,6 +170,8 @@ function loadDashboardData() {
                 document.getElementById('avg-accuracy').textContent = stats.avgAccuracy + '%';
                 document.getElementById('mastered-letters').textContent = stats.masteredLetters + '/26';
                 document.getElementById('mastered-vocab').textContent = stats.masteredVocab;
+                document.getElementById('total-quiz-alphabet').textContent = stats.totalQuizAlphabet || 0;
+                document.getElementById('total-quiz-vocabulary').textContent = stats.totalQuizVocabulary || 0;
                 
                 // Update history table
                 updateHistoryTable(stats.recentHistory);
@@ -145,18 +191,48 @@ function updateHistoryTable(history) {
         history.forEach(record => {
             const row = document.createElement('tr');
             const statusClass = record.accuracy >= 80 ? 'success' : record.accuracy >= 60 ? 'warning' : 'danger';
+            const statusIcon = record.accuracy >= 80 ? 'fa-check-circle' : record.accuracy >= 60 ? 'fa-exclamation-circle' : 'fa-times-circle';
+            const typeIcon = record.type === 'Abjad' ? 'fa-font' : 'fa-book';
+            const typeBadge = record.type === 'Abjad' ? 'primary' : 'info';
             
             row.innerHTML = `
-                <td>${record.date}</td>
-                <td>${record.type}</td>
-                <td>${record.target}</td>
-                <td>${record.accuracy}%</td>
-                <td><span class="badge bg-${statusClass}">${record.status}</span></td>
+                <td class="align-middle">
+                    <i class="fas fa-clock text-muted me-2"></i>
+                    <span class="fw-medium">${record.date}</span>
+                </td>
+                <td class="align-middle">
+                    <span class="badge bg-${typeBadge}">
+                        <i class="fas ${typeIcon} me-1"></i>${record.type}
+                    </span>
+                </td>
+                <td class="align-middle">
+                    <span class="fw-bold text-dark">${record.target}</span>
+                </td>
+                <td class="align-middle">
+                    <div class="d-flex align-items-center">
+                        <div class="progress" style="width: 100px; height: 8px;">
+                            <div class="progress-bar bg-${statusClass}" style="width: ${record.accuracy}%"></div>
+                        </div>
+                        <span class="ms-2 fw-bold text-${statusClass}">${record.accuracy}%</span>
+                    </div>
+                </td>
+                <td class="align-middle text-center">
+                    <span class="badge bg-${statusClass} px-3 py-2">
+                        <i class="fas ${statusIcon} me-1"></i>${record.status}
+                    </span>
+                </td>
             `;
             historyTableBody.appendChild(row);
         });
     } else {
-        historyTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Belum ada riwayat latihan</td></tr>';
+        historyTableBody.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center text-muted py-5">
+                    <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                    <p class="mb-0">Belum ada riwayat latihan</p>
+                </td>
+            </tr>
+        `;
     }
 }
 

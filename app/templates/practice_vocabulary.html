@@ -247,6 +247,14 @@ function changeWord(direction) {
     if (newIndex >= 0 && newIndex < vocabularyList.length) {
         currentWordIndex = newIndex;
         updateWordDisplay();
+        
+        if (practiceVideo.srcObject) {
+            isDetecting = true;
+            startRealtimeDetection();
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        }
+        
         updateNavigationButtons();
     } else if (newIndex >= vocabularyList.length) {
         showNotification('Selamat! Anda telah menyelesaikan semua kosakata!', 'success');
@@ -255,15 +263,9 @@ function changeWord(direction) {
 }
 
 function updateNavigationButtons() {
-    if (isDetecting) {
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-    } else {
-        prevBtn.disabled = currentWordIndex === 0;
-        nextBtn.disabled = currentWordIndex === vocabularyList.length - 1;
-    }
+    prevBtn.disabled = currentWordIndex === 0;
+    nextBtn.disabled = currentWordIndex === vocabularyList.length - 1;
     
-    // Update button text based on position
     if (currentWordIndex === vocabularyList.length - 1) {
         nextBtn.innerHTML = 'Selesai <i class="fas fa-check"></i>';
     } else {
@@ -342,14 +344,13 @@ function stopPractice() {
     
     startBtn.disabled = false;
     stopBtn.disabled = true;
-    prevBtn.disabled = true;
-    nextBtn.disabled = true;
     
     if (detectionInterval) {
         clearInterval(detectionInterval);
     }
     
     resetDetection();
+    updateNavigationButtons();
 }
 
 function startRealtimeDetection() {

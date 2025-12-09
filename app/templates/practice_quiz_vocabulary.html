@@ -11,9 +11,6 @@
         <p style="font-size: 18px; margin-bottom: 5px;">Soal <strong id="modal-question-num">1</strong></p>
         <p id="modal-result" style="font-size: 16px; margin-bottom: 20px;">Jawaban: <strong id="modal-answer">Halo</strong></p>
         <div style="display: flex; gap: 10px; justify-content: center;">
-            <button id="modal-prev" class="btn btn-secondary">
-                <i class="fas fa-chevron-left"></i> Sebelumnya
-            </button>
             <button id="modal-next" class="btn btn-primary">
                 Lanjut <i class="fas fa-chevron-right"></i>
             </button>
@@ -98,22 +95,10 @@
                         <button id="stop-quiz" class="btn btn-danger btn-lg" disabled>
                             <i class="fas fa-stop"></i> Berhenti
                         </button>
-                        <button id="prev-question" class="btn btn-secondary btn-lg" style="display: none;">
-                            <i class="fas fa-arrow-left"></i> Soal Sebelumnya
-                        </button>
-                        <button id="next-question" class="btn btn-primary btn-lg" style="display: none;">
-                            <i class="fas fa-arrow-right"></i> Soal Berikutnya
-                        </button>
                     </div>
                 </div>
                 
-                <div id="result-container" style="display: none;">
-                    <div class="text-center">
-                        <a href="{{ url_for('practice_quiz_vocabulary') }}" class="btn btn-primary btn-lg">
-                            <i class="fas fa-redo"></i> Pilih Soal Lagi
-                        </a>
-                    </div>
-                </div>
+                <div id="result-container" style="display: none;"></div>
             </div>
         </div>
     </div>
@@ -160,8 +145,6 @@ const questionText = document.getElementById('question-text');
 const answerDisplay = document.getElementById('answer-display');
 const startBtn = document.getElementById('start-quiz');
 const stopBtn = document.getElementById('stop-quiz');
-const nextBtn = document.getElementById('next-question');
-const prevBtn = document.getElementById('prev-question');
 const detectionOverlay = document.getElementById('detection-overlay');
 const detectedGestureDiv = document.getElementById('detected-gesture');
 const holdProgress = document.getElementById('hold-progress');
@@ -183,26 +166,18 @@ if (questions.length === 0) {
 // Event listeners
 startBtn.addEventListener('click', startQuiz);
 stopBtn.addEventListener('click', stopQuiz);
-nextBtn.addEventListener('click', nextQuestion);
-prevBtn.addEventListener('click', prevQuestion);
 
 
 
 function loadQuestion() {
-    if (currentQuestionIndex >= questions.length) {
-        showResults();
-        return;
-    }
-    
     const question = questions[currentQuestionIndex];
-    targetWords = question[3].split(','); // Split answer by comma
-    questionText.textContent = question[2]; // Display question text
+    targetWords = question[3].split(',');
+    questionText.textContent = question[2];
     currentAnswer = [];
     currentWordIndex = 0;
     answerDisplay.textContent = '';
     answerStatus.textContent = `Menunggu kata ${currentWordIndex + 1} dari ${targetWords.length}...`;
     currentQuestionNum.textContent = currentQuestionIndex + 1;
-    nextBtn.style.display = 'none';
 }
 
 async function startQuiz() {
@@ -395,15 +370,10 @@ function checkAnswer() {
     scoreBadge.textContent = `Skor: ${score}`;
     saveQuizResult(questions[currentQuestionIndex][0], userAnswerStr, isCorrect);
     
-    // Stop detection immediately
     isDetecting = false;
     if (detectionInterval) clearInterval(detectionInterval);
     resetDetection();
-    
-    nextBtn.style.display = 'inline-block';
-    prevBtn.style.display = 'inline-block';
     stopBtn.disabled = true;
-    updateNavigationButtons();
     showSuccessModal(isCorrect);
 }
 
@@ -414,7 +384,6 @@ function showSuccessModal(isCorrect) {
     const modalQuestionNum = document.getElementById('modal-question-num');
     const modalResult = document.getElementById('modal-result');
     const modalAnswer = document.getElementById('modal-answer');
-    const modalPrev = document.getElementById('modal-prev');
     const modalNext = document.getElementById('modal-next');
     
     modalQuestionNum.textContent = currentQuestionIndex + 1;
@@ -434,76 +403,30 @@ function showSuccessModal(isCorrect) {
         modalResult.innerHTML = `Jawaban Anda: <strong style="color: #dc3545;">${userAnswerDisplay}</strong><br>Jawaban Benar: <strong style="color: #28a745;">${correctAnswerDisplay}</strong>`;
     }
     
-    modalPrev.disabled = currentQuestionIndex === 0;
-    modalNext.disabled = false;
-    
     if (currentQuestionIndex === questions.length - 1) {
-        modalNext.innerHTML = 'Selesai <i class="fas fa-check"></i>';
+        modalNext.innerHTML = 'Pilih Soal Lagi <i class="fas fa-redo"></i>';
+        modalNext.onclick = () => {
+            window.location.href = '{{ url_for("practice_quiz_vocabulary") }}';
+        };
     } else {
         modalNext.innerHTML = 'Lanjut <i class="fas fa-chevron-right"></i>';
+        modalNext.onclick = () => {
+            modal.style.display = 'none';
+            nextQuestion();
+        };
     }
     
     modal.style.display = 'flex';
-    
-    modalPrev.onclick = () => {
-        modal.style.display = 'none';
-        prevQuestion();
-    };
-    
-    modalNext.onclick = () => {
-        modal.style.display = 'none';
-        if (currentQuestionIndex === questions.length - 1) {
-            showResults();
-        } else {
-            nextQuestion();
-        }
-    };
 }
 
 function nextQuestion() {
     if (currentQuestionIndex < questions.length - 1) {
         currentQuestionIndex++;
         loadQuestion();
-        nextBtn.style.display = 'none';
-        prevBtn.style.display = 'none';
         stopBtn.disabled = false;
-        // Restart detection
-        isDetecting = true;
-        startRealtimeDetection();
-    } else {
-        showResults();
-    }
-}
-
-function prevQuestion() {
-    if (currentQuestionIndex > 0) {
-        currentQuestionIndex--;
-        loadQuestion();
-        nextBtn.style.display = 'none';
-        prevBtn.style.display = 'none';
-        stopBtn.disabled = false;
-        // Restart detection
         isDetecting = true;
         startRealtimeDetection();
     }
-}
-
-function updateNavigationButtons() {
-    if (nextBtn.style.display === 'inline-block') {
-        prevBtn.disabled = currentQuestionIndex <= 0;
-        
-        if (currentQuestionIndex >= questions.length - 1) {
-            nextBtn.innerHTML = '<i class="fas fa-check"></i> Selesai';
-        } else {
-            nextBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Soal Berikutnya';
-        }
-    }
-}
-
-function showResults() {
-    document.getElementById('quiz-container').style.display = 'none';
-    document.getElementById('result-container').style.display = 'block';
-    stopQuiz();
 }
 
 function saveQuizResult(quizId, userAnswer, isCorrect) {
